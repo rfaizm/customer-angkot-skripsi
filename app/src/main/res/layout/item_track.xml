@@ -63,12 +63,26 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
+                android:layout_marginEnd="8dp"
                 android:text="Rp. 5.000"
                 android:textColor="#FD0303"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintHorizontal_bias="0.884"
                 app:layout_constraintStart_toEndOf="@+id/text_eta"
                 app:layout_constraintTop_toBottomOf="@+id/trayek_angkot" />
+
+            <TextView
+                android:id="@+id/per_person"
+                style="@style/textReguler"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/person"
+                android:textSize="10sp"
+                app:layout_constraintBottom_toBottomOf="@+id/price_trayek"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toEndOf="@+id/price_trayek"
+                app:layout_constraintTop_toTopOf="@+id/price_trayek" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

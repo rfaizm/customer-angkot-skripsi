@@ -97,15 +97,6 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
                     val lat = data.getDouble("lat")
                     val lng = data.getDouble("long")
                     Log.d("AngkotFragment", "Received position update: id=$id, lat=$lat, lng=$lng")
-                    if (isAdded) {
-                        requireActivity().runOnUiThread {
-                            Toast.makeText(
-                                requireContext(),
-                                "Angkot $id updated: Lat=$lat, Lng=$lng",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
                     angkotViewModel.updateAngkotPosition(id, lat, lng)
                 } catch (e: Exception) {
                     Log.e("AngkotFragment", "Error parsing Pusher message: ${e.message}")
@@ -162,11 +153,6 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
                     val latLng = state.data
                     userLatitude = latLng.latitude // Baris tambahan: Simpan lokasi pengguna
                     userLongitude = latLng.longitude
-                    Toast.makeText(
-                        requireContext(),
-                        "Lokasi: Lat=${latLng.latitude}, Lng=${latLng.longitude}",
-                        Toast.LENGTH_LONG
-                    ).show()
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.position_maps) as? MapsFragment
                     mapsFragment?.animateCameraToLocation(latLng.latitude, latLng.longitude)
                     angkotViewModel.getClosestTrayek(latLng.latitude, latLng.longitude)
@@ -196,11 +182,14 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
                             mapsFragment?.clearAngkotMarkers()
                             val locations = mutableListOf<LatLng>()
                             selectedTrayek.angkotIds.forEachIndexed { index, angkotId ->
-                                if (index < selectedTrayek.latitudes.size && index < selectedTrayek.longitudes.size) {
+                                if (index < selectedTrayek.latitudes.size &&
+                                    index < selectedTrayek.longitudes.size &&
+                                    index < selectedTrayek.platNomors.size) {
                                     val lat = selectedTrayek.latitudes[index]
                                     val lng = selectedTrayek.longitudes[index]
+                                    val platNomor = selectedTrayek.platNomors[index]
                                     if (lat != 0.0 && lng != 0.0) {
-                                        mapsFragment?.updateAngkotMarker(angkotId, lat, lng)
+                                        mapsFragment?.updateAngkotMarker(angkotId, lat, lng, platNomor)
                                         locations.add(LatLng(lat, lng))
                                     }
                                 }

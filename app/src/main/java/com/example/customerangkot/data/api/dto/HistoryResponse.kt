@@ -29,5 +29,8 @@ data class DataHistoryItem(
 	val totalPrice: Int? = null,
 
 	@field:SerializedName("trayek")
-	val trayek: String? = null
+	val trayek: String? = null,
+
+	@field:SerializedName("payment_method")
+	val paymentMethod: String? = null
 )

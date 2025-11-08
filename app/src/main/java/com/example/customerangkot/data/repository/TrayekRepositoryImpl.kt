@@ -3,6 +3,7 @@ package com.example.customerangkot.data.repository
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
 import com.example.customerangkot.data.api.dto.FindClosestResponse
+import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.datasource.TrayekDataSource
 import com.example.customerangkot.domain.repository.TrayekRepository
 import retrofit2.HttpException
@@ -31,5 +32,19 @@ class TrayekRepositoryImpl(
             Log.e(TAG, "Error fetching angkot by trayekId: ${e.message}", e)
             throw e
         }
+    }
+
+    override suspend fun getIdDriverWithAngkotId(
+        token: String,
+        angkotId: Int
+    ): GetDriverResponse {
+        try {
+            Log.d(TAG, "Fetching driver by angkotId=$angkotId")
+            return trayekDataSource.getIdDriver(token, angkotId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching driver by angkotId: ${e.message}", e)
+            throw e
+        }
+
     }
 }

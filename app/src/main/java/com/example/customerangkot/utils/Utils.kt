@@ -52,7 +52,7 @@ object Utils {
                         imageUrl = null,    // Baris 9: Inisialisasi imageUrl
                         angkotIds = emptyList(),
                         longitudes = emptyList(),
-                        latitudes = emptyList()// Baris 10: Inisialisasi angkotIds
+                        latitudes = emptyList(),
                     )
                 } catch (e: NumberFormatException) {
                     null
@@ -62,6 +62,11 @@ object Utils {
             }
         }
     }
+
+    fun String.capitalizeWords(): String =
+        split(" ").joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        }
 
     fun formatNumber(number: Int): String {
         val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))

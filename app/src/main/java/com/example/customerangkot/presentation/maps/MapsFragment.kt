@@ -40,6 +40,7 @@ class MapsFragment : Fragment() {
     private var isMapReady = false
     private val angkotMarkers = mutableMapOf<Int, Marker>()
     private val polylines = mutableListOf<Polyline>()
+    private val angkotPlatNomor = mutableMapOf<Int, String>()  // [BARU]
 
     // Tambahkan LiveData untuk status peta
     private val _mapReadyLiveData = MutableLiveData<Boolean>()
@@ -176,22 +177,31 @@ class MapsFragment : Fragment() {
         Log.d("MapsFragment", "Camera animated to bounds with ${locations.size} locations")
     }
 
-    fun updateAngkotMarker(angkotId: Int, lat: Double, lng: Double) {
-        if (!isAdded || !isMapReady) {
-            Log.d("MapsFragment", "updateAngkotMarker skipped: Fragment not attached or map not ready")
-            return
-        }
+    fun updateAngkotMarker(angkotId: Int, lat: Double, lng: Double, platNomor: String? = null) {
+        if (!isAdded || !isMapReady) return
+
         val position = LatLng(lat, lng)
         angkotMarkers[angkotId]?.remove()
+
+        // Gunakan platNomor jika ada
+        val title = if (!platNomor.isNullOrBlank()) platNomor else "Angkot $angkotId"
+
         val marker = mMap.addMarker(
             MarkerOptions()
                 .position(position)
-                .title("Angkot $angkotId")
+                .title(title)
         )
-        if (marker != null) {
-            angkotMarkers[angkotId] = marker
+        marker?.let {
+            angkotMarkers[angkotId] = it
+            if (platNomor != null) {
+                angkotPlatNomor[angkotId] = platNomor  // Simpan untuk Pusher
+            }
         }
-        Log.d("MapsFragment", "Marker updated for Angkot $angkotId at Lat=$lat, Lng=$lng")
+    }
+
+    fun updateAngkotMarker(angkotId: Int, lat: Double, lng: Double) {
+        val savedPlatNomor = angkotPlatNomor[angkotId]
+        updateAngkotMarker(angkotId, lat, lng, savedPlatNomor)
     }
 
     fun clearAngkotMarkers() {

@@ -22,10 +22,11 @@ class OrderDataSourceImpl(
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String // [Baru]
     ): OrderCreatedResponse {
         try {
-            Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice")
+            Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice, methodPayment=$methodPayment")
             return apiService.createOrder(
                 "Bearer $token",
                 driverId,
@@ -34,7 +35,8 @@ class OrderDataSourceImpl(
                 destinationLat,
                 destinationLong,
                 numberOfPassengers,
-                totalPrice.toInt()
+                totalPrice.toInt(),
+                methodPayment
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error creating order: ${e.message}", e)

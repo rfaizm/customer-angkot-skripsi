@@ -24,5 +24,9 @@ data class RouteAngkot(
     val namaTrayek: String,
     val predictETA: String,
     val price: Double,
-    val polyline : String
+    val polyline : String,
+    val startLat : Double,
+    val startLong : Double,
+    val destinationLat : Double,
+    val destinationLong : Double
 )

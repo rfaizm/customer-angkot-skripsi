@@ -1,6 +1,7 @@
 package com.example.customerangkot.data.api
 
 import com.example.customerangkot.data.api.dto.FindClosestResponse
+import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.GetProfileResponse
 import com.example.customerangkot.data.api.dto.HistoryResponse
@@ -13,6 +14,7 @@ import com.example.customerangkot.data.api.dto.PlaceToCoordinateResponse
 import com.example.customerangkot.data.api.dto.RegisterSuccessResponse
 import com.example.customerangkot.data.api.dto.RouteResponse
 import com.example.customerangkot.data.api.dto.TopUpResponse
+import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -29,7 +31,7 @@ interface ApiService {
         @Field("email") email : String,
         @Field("no_hp") numberPhone : String,
         @Field("password") password : String
-    ): RegisterSuccessResponse
+    ): Response<RegisterSuccessResponse>
 
     @FormUrlEncoded
     @POST("login")
@@ -99,7 +101,8 @@ interface ApiService {
         @Field("destination_point_lat") destinationLat : Double,
         @Field("destination_point_long") destinationLong : Double,
         @Field("number_of_passengers") numberOfPassengers : Int,
-        @Field("price") totalPrice : Int
+        @Field("price") totalPrice : Int,
+        @Field("payment_method") paymentMethod : String
     ) : OrderCreatedResponse
 
     @FormUrlEncoded
@@ -140,4 +143,11 @@ interface ApiService {
         @Field("end_lat") endLat : Double,
         @Field("end_long") endLong : Double,
     ) : GetETAResponse
+
+    @FormUrlEncoded
+    @POST("get-driver")
+    suspend fun getDriver(
+        @Header("Authorization") token: String,
+        @Field("angkot_id") angkotId : Int,
+    ) : Response<GetDriverResponse>
 }

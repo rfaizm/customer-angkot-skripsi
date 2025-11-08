@@ -30,6 +30,8 @@ data class TrayekJSON(
 )
 
 data class DataTrayekJSON(
+	@field:SerializedName("driver_id")
+	val driverId: Int? = null,
 
 	@field:SerializedName("distanceKm")
 	val distanceKm: Any? = null,

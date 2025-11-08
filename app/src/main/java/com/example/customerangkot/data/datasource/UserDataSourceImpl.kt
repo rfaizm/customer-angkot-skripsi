@@ -11,7 +11,10 @@ import com.example.customerangkot.data.api.dto.TopUpResponse
 import com.example.customerangkot.data.preference.UserPreference
 import com.example.customerangkot.domain.entity.User
 import com.example.customerangkot.domain.entity.UserSession
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.Flow
+import retrofit2.HttpException
 
 class UserDataSourceImpl(
     private val apiService: ApiService,
@@ -28,7 +31,23 @@ class UserDataSourceImpl(
     ): RegisterSuccessResponse {
         try {
             Log.d(TAG, "Calling register with name=$name, email=$email")
-            return apiService.register(name, email, noHp, password)
+            val response = apiService.register(name, email, noHp, password)
+            if (response.isSuccessful) {
+                return response.body() ?: throw Exception("Respons kosong dari server")
+            } else {
+                // [Baru] Tangani error 422
+                if (response.code() == 422) {
+                    val errorBody = response.errorBody()?.string()
+                    val errorJson = Gson().fromJson(errorBody, JsonObject::class.java)
+                    val errorMessage = errorJson.get("message")?.asString ?: "Validasi gagal"
+                    val errors = errorJson.getAsJsonObject("errors")
+                    val detailedError = errors?.entrySet()?.joinToString(", ") { entry ->
+                        entry.value.asJsonArray.joinToString(", ") { it.asString }
+                    } ?: errorMessage
+                    throw Exception(detailedError)
+                }
+                throw HttpException(response)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error in register: ${e.message}", e)
             throw e

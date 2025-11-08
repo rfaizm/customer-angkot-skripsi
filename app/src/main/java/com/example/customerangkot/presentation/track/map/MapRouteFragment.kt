@@ -106,7 +106,7 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
         binding.radioGroupRouteType.setOnCheckedChangeListener { _, checkedId ->
             routeType = when (checkedId) {
                 R.id.radio_best_route -> "best_route"
-                R.id.radio_less_transit -> "fewer_transfers"
+                R.id.radio_less_transit -> "less_transit"
                 R.id.radio_less_walking -> "less_walking"
                 else -> "best_route"
             }
@@ -235,10 +235,14 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 namaTrayek = it.name ?: "Trayek Tidak Dikenal",
                 predictETA = it.duration ?: "N/A",
                 price = it.price?.toDouble() ?: 0.0,
-                polyline = it.polyline.toString()
+                polyline = it.polyline.toString(),
+                startLat = it.startLat ?: 0.0,
+                startLong = it.startLong ?: 0.0,
+                destinationLat = it.destinationLat ?: 0.0,
+                destinationLong = it.destinationLong ?: 0.0
             )
         }
-        val routeAdapter = RouteAdapter(routeList, { selectedRoute, sLat, sLong, dLat, dLong ->
+        val routeAdapter = RouteAdapter(routeList, { selectedRoute ->
             val trayekItem = trayeks.find { it.id == selectedRoute.trayekId }
             val departureLocation = trayekItem?.departure ?: "lokasi tujuan"
 
@@ -249,10 +253,10 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                     // Navigasi ke ChooseAngkotFragment dengan data
                     val bundle = Bundle().apply {
                         putInt("trayek_id", selectedRoute.trayekId)
-                        putDouble("start_lat", sLat)
-                        putDouble("start_long", sLong)
-                        putDouble("destination_lat", dLat)
-                        putDouble("destination_long", dLong)
+                        putDouble("start_lat", selectedRoute.startLat)
+                        putDouble("start_long", selectedRoute.startLong)
+                        putDouble("destination_lat", selectedRoute.destinationLat)
+                        putDouble("destination_long", selectedRoute.destinationLong)
                         putDouble("price", selectedRoute.price)
                         putString("polyline", selectedRoute.polyline)
                     }
@@ -267,7 +271,7 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 }
                 .setNegativeButton("Batal", null)
                 .show()
-        }, startLat ?: 0.0, startLong ?: 0.0, destinationLat ?: 0.0, destinationLong ?: 0.0)
+        })
         binding.rvTrackRoute.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = routeAdapter
@@ -306,7 +310,7 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
     private fun setupRecycleView() {
         binding.rvTrackRoute.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = RouteAdapter(emptyList(), { _, _, _, _, _ -> }, 0.0, 0.0, 0.0, 0.0)
+            adapter = RouteAdapter(emptyList(), { _,-> })
         }
     }
 

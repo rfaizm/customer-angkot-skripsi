@@ -6,14 +6,17 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customerangkot.data.api.dto.DataTrayekJSON
+import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
 import com.example.customerangkot.data.api.dto.PlaceNameResponse
 import com.example.customerangkot.data.api.dto.PlaceToCoordinateResponse
 import com.example.customerangkot.data.api.dto.RouteResponse
+import com.example.customerangkot.data.api.dto.TopUpResponse
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.domain.entity.LatLng
+import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -23,6 +26,8 @@ import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
+import com.example.customerangkot.domain.usecase.user.GetSaldoUseCase
 import kotlinx.coroutines.launch
 
 class TrackAngkotViewModel(
@@ -33,7 +38,10 @@ class TrackAngkotViewModel(
     private val getAngkotByTrayekIdUseCase: GetAngkotByTrayekIdUseCase,
     private val createOrderUseCase: CreateOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
-    private val getETAUseCase: GetETAUseCase // [Baru]
+    private val getETAUseCase: GetETAUseCase,
+    private val getSaldoUseCase: GetSaldoUseCase,
+    private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
+    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase
 ) : ViewModel() {
 
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
@@ -54,17 +62,38 @@ class TrackAngkotViewModel(
     private val _orderState = MutableLiveData<ResultState<OrderCreatedResponse>>()
     val orderState: LiveData<ResultState<OrderCreatedResponse>> get() = _orderState
 
-    private val _cancelOrderState = MutableLiveData<ResultState<OrderCancelResponse>>() // [Baru]
-    val cancelOrderState: LiveData<ResultState<OrderCancelResponse>> get() = _cancelOrderState // [Baru]
+    private val _cancelOrderState = MutableLiveData<ResultState<OrderCancelResponse>>()
+    val cancelOrderState: LiveData<ResultState<OrderCancelResponse>> get() = _cancelOrderState
 
     private val _etaState = MutableLiveData<ResultState<GetETAResponse>>()
     val etaState: LiveData<ResultState<GetETAResponse>> get() = _etaState
 
-    // [Baru] State untuk status pesanan
     private val _orderStatus = MutableLiveData<String>("menunggu")
     val orderStatus: LiveData<String> get() = _orderStatus
 
+    private val _saldoState = MutableLiveData<ResultState<TopUpResponse>>()
+    val saldoState: LiveData<ResultState<TopUpResponse>> get() = _saldoState
+
+    private val _pusherConnectionState = MutableLiveData<ResultState<Boolean>>()
+    val pusherConnectionState: LiveData<ResultState<Boolean>> get() = _pusherConnectionState
+
+    private val _driverIdState = MutableLiveData<ResultState<GetDriverResponse>>()
+
+    val driverIdState: LiveData<ResultState<GetDriverResponse>> get() = _driverIdState
+
+
     var lastLocationType: String? = null
+
+    fun checkPusherConnection() {
+        _pusherConnectionState.value = ResultState.Loading
+        viewModelScope.launch {
+            val result = checkPusherConnectionUseCase()
+            _pusherConnectionState.value = when {
+                result.isSuccess -> ResultState.Success(result.getOrThrow())
+                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal memeriksa koneksi Pusher")
+            }
+        }
+    }
 
     fun getUserLocation() {
         _locationState.value = ResultState.Loading
@@ -127,6 +156,17 @@ class TrackAngkotViewModel(
         }
     }
 
+    fun getDriverWithAngkotId(angkotId: Int) {
+        _driverIdState.value = ResultState.Loading
+        viewModelScope.launch {
+            val result = getDriverIdWithAngkotIdUseCase(angkotId)
+            _driverIdState.value = when {
+                result.isSuccess -> ResultState.Success(result.getOrThrow())
+                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil data driver")
+            }
+        }
+    }
+
     fun updateAngkotPosition(angkotId: Int, lat: Double, lng: Double) {
         val currentPositions = _angkotPositions.value?.toMutableMap() ?: mutableMapOf()
         currentPositions[angkotId] = LatLng(lat, lng)
@@ -141,14 +181,15 @@ class TrackAngkotViewModel(
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String
     ) {
         _orderState.value = ResultState.Loading
         viewModelScope.launch {
-            val result = createOrderUseCase(driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice)
+            val result = createOrderUseCase(driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment)
             _orderState.value = when {
                 result.isSuccess -> {
-                    Log.d("TrackAngkotViewModel", "Pesanan berhasil dibuat: orderId=${result.getOrThrow().data?.orderId}")
+                    Log.d("TrackAngkotViewModel", "Pesanan berhasil dibuat: orderId=${result.getOrThrow().data?.orderId}, methodPayment=$methodPayment")
                     ResultState.Success(result.getOrThrow())
                 }
                 else -> {
@@ -160,7 +201,6 @@ class TrackAngkotViewModel(
         }
     }
 
-    // [Baru] Fungsi untuk membatalkan pesanan
     fun cancelOrder(orderId: Int) {
         _cancelOrderState.value = ResultState.Loading
         viewModelScope.launch {
@@ -179,14 +219,13 @@ class TrackAngkotViewModel(
         }
     }
 
-    // [Berubah] Fungsi untuk mendapatkan ETA dengan tujuan berdasarkan status
     fun getETA(
         driverLat: Double,
         driverLong: Double,
         pickupLat: Double,
         pickupLong: Double,
-        destinationLat: Double, // [Baru]
-        destinationLong: Double // [Baru]
+        destinationLat: Double,
+        destinationLong: Double
     ) {
         _etaState.value = ResultState.Loading
         viewModelScope.launch {
@@ -210,7 +249,24 @@ class TrackAngkotViewModel(
         }
     }
 
-    // [Baru] Fungsi untuk memperbarui status pesanan
+    fun getSaldo() {
+        _saldoState.value = ResultState.Loading
+        viewModelScope.launch {
+            val result = getSaldoUseCase()
+            _saldoState.value = when {
+                result.isSuccess -> {
+                    Log.d("TrackAngkotViewModel", "Saldo berhasil diambil: ${result.getOrThrow().message}")
+                    ResultState.Success(result.getOrThrow())
+                }
+                else -> {
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Gagal mendapatkan saldo"
+                    Log.e("TrackAngkotViewModel", "Error: $errorMessage")
+                    ResultState.Error(errorMessage)
+                }
+            }
+        }
+    }
+
     fun updateOrderStatus(status: String) {
         _orderStatus.value = status
         Log.d("TrackAngkotViewModel", "Order status updated: $status")

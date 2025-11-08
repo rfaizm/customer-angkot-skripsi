@@ -202,7 +202,12 @@ class DetailInformationTrayekActivity : AppCompatActivity() {
                     } else {
                         angkotList.forEach { angkot ->
                             if (angkot.latitude != 0.0 && angkot.longtitude != 0.0) {
-                                mapsFragment?.updateAngkotMarker(angkot.angkotId, angkot.latitude, angkot.longtitude)
+                                mapsFragment?.updateAngkotMarker(
+                                    angkot.angkotId,
+                                    angkot.latitude,
+                                    angkot.longtitude,
+                                    angkot.platNomor  // [BARU] Kirim platNomor
+                                )
                             }
                         }
                         angkotList.firstOrNull { it.latitude != 0.0 && it.longtitude != 0.0 }?.let { angkot ->

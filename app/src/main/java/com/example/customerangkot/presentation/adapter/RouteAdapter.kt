@@ -10,11 +10,8 @@ import java.util.Locale
 
 class RouteAdapter(
     private val routeList: List<RouteAngkot>,
-    private val onRouteSelected: (RouteAngkot, startLat: Double, startLong: Double, destinationLat: Double, destinationLong: Double) -> Unit,
-    private val startLat: Double,
-    private val startLong: Double,
-    private val destinationLat: Double,
-    private val destinationLong: Double
+    private val onRouteSelected: (RouteAngkot) -> Unit,
+
 ) : RecyclerView.Adapter<RouteAdapter.RouteViewHolder>() {
 
     inner class RouteViewHolder(private val binding: ItemTrackBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -25,7 +22,7 @@ class RouteAdapter(
             binding.priceTrayek.text = formatter.format(routeAngkot.price).replace("Rp", "Rp. ").replace(",00", "")
 
             itemView.setOnClickListener {
-                onRouteSelected(routeAngkot, startLat, startLong, destinationLat, destinationLong)
+                onRouteSelected(routeAngkot)
             }
         }
     }

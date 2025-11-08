@@ -26,11 +26,12 @@ class OrderRepositoryImpl(
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String // [Baru]
     ): OrderCreatedResponse {
         try {
-            Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice")
-            return orderDataSource.createOrder(token, driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice)
+            Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice, methodPayment=$methodPayment")
+            return orderDataSource.createOrder(token, driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment)
         } catch (e: Exception) {
             Log.e(TAG, "Error creating order: ${e.message}", e)
             throw e

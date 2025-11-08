@@ -13,7 +13,8 @@ interface OrderDataSource {
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String // [Baru]
     ): OrderCreatedResponse
     suspend fun cancelOrder(token: String, orderId: Int): OrderCancelResponse
     suspend fun getETA(

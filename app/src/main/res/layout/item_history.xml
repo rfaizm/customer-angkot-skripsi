@@ -71,5 +71,15 @@
             app:layout_constraintStart_toEndOf="@+id/date"
             app:layout_constraintTop_toBottomOf="@+id/number_plat" />
 
+        <TextView
+            android:id="@+id/methodPayment"
+            style="@style/textMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tunai"
+            app:layout_constraintBottom_toTopOf="@+id/price"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/number_plat" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

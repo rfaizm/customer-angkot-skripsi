@@ -28,6 +28,8 @@ class AngkotViewModel(
     private val _angkotPositions = MutableLiveData<Map<Int, LatLng>>()
     val angkotPositions: LiveData<Map<Int, LatLng>> get() = _angkotPositions
 
+    private val _angkotPlatNomor = mutableMapOf<Int, String>()
+
     fun getUserLocation() {
         _locationState.value = ResultState.Loading
         viewModelScope.launch {
@@ -54,10 +56,12 @@ class AngkotViewModel(
         _selectedAngkotIds.value = angkotIds
     }
 
-    fun updateAngkotPosition(angkotId: Int, lat: Double, lng: Double) {
+    fun updateAngkotPosition(angkotId: Int, lat: Double, lng: Double, platNomor: String? = null) {
         val currentPositions = _angkotPositions.value?.toMutableMap() ?: mutableMapOf()
         currentPositions[angkotId] = LatLng(lat, lng)
-        _angkotPositions.postValue(currentPositions) // Baris 67: Ganti setValue dengan postValue
-        Log.d("HomeViewModel", "Updated position for Angkot $angkotId: Lat=$lat, Lng=$lng")
+        _angkotPositions.postValue(currentPositions)
+
+        // Kirim platNomor ke observer
+        _angkotPlatNomor[angkotId] = (platNomor ?: _angkotPlatNomor[angkotId]).toString()
     }
 }

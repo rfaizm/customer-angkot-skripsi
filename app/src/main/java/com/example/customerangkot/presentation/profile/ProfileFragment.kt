@@ -60,7 +60,16 @@ class ProfileFragment : Fragment() {
 
 
         binding.logoutButton.setOnClickListener {
-            profileViewModel.logout()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Logout")
+                .setMessage("Apakah anda yakin untuk keluar akun?")
+                .setNegativeButton("Tidak") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .setPositiveButton("Iya") { _, _ ->
+                    profileViewModel.logout()
+                }
+                .show()
         }
 
         // Panggil endpoint /history saat fragment dimuat
@@ -85,18 +94,31 @@ class ProfileFragment : Fragment() {
                 is ResultState.Success -> {
                     showLoading(false)
                     val historyItems = state.data.data?.filterNotNull() ?: emptyList()
-                    binding.rvHistory.adapter = HistoryAdapter(historyItems)
+
                     if (historyItems.isEmpty()) {
-                        Toast.makeText(requireContext(), "Tidak ada riwayat pesanan", Toast.LENGTH_SHORT).show()
+                        binding.historyEmpty.visibility = View.VISIBLE
+                        binding.textHistoryEmpty.visibility = View.VISIBLE
+                        binding.rvHistory.visibility = View.GONE
+                    } else {
+                        binding.historyEmpty.visibility = View.GONE
+                        binding.textHistoryEmpty.visibility = View.GONE
+                        binding.rvHistory.visibility = View.VISIBLE
+
+                        binding.rvHistory.adapter = HistoryAdapter(historyItems)
                     }
                 }
                 is ResultState.Error -> {
                     showLoading(false)
-                    Toast.makeText(requireContext(), "Gagal memuat riwayat: ${state.error}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Gagal memuat riwayat: ${state.error}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
+
 
     private fun observeLogoutState() {
         profileViewModel.logoutState.observe(viewLifecycleOwner) { state ->
@@ -107,16 +129,10 @@ class ProfileFragment : Fragment() {
                 }
                 is ResultState.Success -> {
                     binding.logoutButton.isEnabled = true
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Berhasil!")
-                        .setMessage("Anda telah logout.")
-                        .setPositiveButton("OK") { _, _ ->
-                            val intent = Intent(requireContext(), LoginActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                            startActivity(intent)
-                            requireActivity().finish()
-                        }
-                        .show()
+                    val intent = Intent(requireContext(), LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
                     showLoading(false)
                 }
                 is ResultState.Error -> {

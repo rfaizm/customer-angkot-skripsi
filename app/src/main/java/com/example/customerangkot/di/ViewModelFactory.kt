@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.customerangkot.domain.usecase.auth.LoginUseCase
 import com.example.customerangkot.domain.usecase.auth.LogoutUseCase
 import com.example.customerangkot.domain.usecase.auth.RegisterUseCase
+import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -15,6 +16,7 @@ import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
 import com.example.customerangkot.domain.usecase.user.GetHistoryUseCase
 import com.example.customerangkot.domain.usecase.user.GetProfileUseCase
 import com.example.customerangkot.domain.usecase.user.GetSaldoUseCase
@@ -45,7 +47,9 @@ class ViewModelFactory private constructor(
     private val getHistoryUseCase: GetHistoryUseCase,
     private val getProfileUseCase: GetProfileUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
-    private val getETAUseCase: GetETAUseCase // [Baru]
+    private val getETAUseCase: GetETAUseCase, // [Baru]
+    private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
+    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase
 ) : ViewModelProvider.NewInstanceFactory() {
 
     @Suppress("UNCHECKED_CAST")
@@ -78,7 +82,10 @@ class ViewModelFactory private constructor(
                     getAngkotByTrayekIdUseCase,
                     createOrderUseCase,
                     cancelOrderUseCase,
-                    getETAUseCase // [Baru]
+                    getETAUseCase,
+                    getSaldoUseCase,
+                    checkPusherConnectionUseCase,
+                    getDriverIdWithAngkotIdUseCase
                 ) as T
             }
             modelClass.isAssignableFrom(TopUpViewModel::class.java) -> {
@@ -111,7 +118,9 @@ class ViewModelFactory private constructor(
                     Injection.provideGetHistoryUseCase(context),
                     Injection.provideGetProfileUseCase(context),
                     Injection.provideCancelOrderUseCase(context),
-                    Injection.provideGetETAUseCase(context) // [Baru]
+                    Injection.provideGetETAUseCase(context), // [Baru]
+                    Injection.provideCheckPusherConnectionUseCase(),
+                    Injection.provideGetDriverIdWithAngkotIdUseCase(context)
                 )
             }.also { instance = it }
     }

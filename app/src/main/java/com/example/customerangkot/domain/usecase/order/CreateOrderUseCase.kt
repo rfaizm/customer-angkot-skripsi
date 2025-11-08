@@ -16,10 +16,11 @@ class CreateOrderUseCase(
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String // [Baru]
     ): Result<OrderCreatedResponse> {
         return try {
-            Log.d("CreateOrderUseCase", "Memulai pembuatan pesanan: driverId=$driverId, startLat=$startLat, startLong=$startLong, destinationLat=$destinationLat, destinationLong=$destinationLong, numberOfPassengers=$numberOfPassengers, totalPrice=$totalPrice")
+            Log.d("CreateOrderUseCase", "Memulai pembuatan pesanan: driverId=$driverId, startLat=$startLat, startLong=$startLong, destinationLat=$destinationLat, destinationLong=$destinationLong, numberOfPassengers=$numberOfPassengers, totalPrice=$totalPrice, methodPayment=$methodPayment")
             val token = userPreference.getAuthToken()
             if (token == null) {
                 Log.e("CreateOrderUseCase", "Token tidak ditemukan")
@@ -34,9 +35,10 @@ class CreateOrderUseCase(
                 destinationLat = destinationLat,
                 destinationLong = destinationLong,
                 numberOfPassengers = numberOfPassengers,
-                totalPrice = totalPrice
+                totalPrice = totalPrice,
+                methodPayment = methodPayment // [Baru]
             )
-            Log.d("CreateOrderUseCase", "Pesanan berhasil dibuat: orderId=${response.data?.orderId}")
+            Log.d("CreateOrderUseCase", "Pesanan berhasil dibuat: orderId=${response.data?.orderId}, methodPayment=${response.data?.methodPayment}")
             Result.success(response)
         } catch (e: Exception) {
             Log.e("CreateOrderUseCase", "Error: ${e.message}", e)

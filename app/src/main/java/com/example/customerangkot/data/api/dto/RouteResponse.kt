@@ -76,7 +76,19 @@ data class TrayeksItem(
 	val departure : String? = null,
 
 	@field:SerializedName("polyline")
-	val polyline : String? = null
+	val polyline : String? = null,
+
+	@field:SerializedName("start_lat")
+	val startLat : Double? = null,
+
+	@field:SerializedName("start_long")
+	val startLong : Double? = null,
+
+	@field:SerializedName("destination_lat")
+	val destinationLat : Double? = null,
+
+	@field:SerializedName("destination_long")
+	val destinationLong : Double? = null,
 )
 
 data class DataItem(

@@ -142,15 +142,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                     val lat = data.getDouble("lat")
                     val lng = data.getDouble("long")
                     Log.d(TAG, "Received position update: id=$id, lat=$lat, lng=$lng")
-                    if (isAdded) {
-                        requireActivity().runOnUiThread {
-                            Toast.makeText(
-                                requireContext(),
-                                "Angkot $id updated: Lat=$lat, Lng=$lng",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
+
                     trackAngkotViewModel.updateAngkotPosition(id, lat, lng)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error parsing Pusher message: ${e.message}")
@@ -199,8 +191,9 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                         angkot.angkotId?.let { id ->
                             val lat = angkot.lat?.toDoubleOrNull()
                             val lng = angkot.long?.toDoubleOrNull()
+                            val platNomor = angkot.platNomor  // [BARU]
                             if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
-                                mapsFragment?.updateAngkotMarker(id, lat, lng)
+                                mapsFragment?.updateAngkotMarker(id, lat, lng, platNomor)  // [BARU]
                                 locations.add(LatLng(lat, lng))
                                 angkotIds.add(id)
                             }
@@ -246,7 +239,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             } else {
                 // [Berubah] Kirim data polyline ke SumPassengerSheet
                 val sumPassengerSheet = SumPassengerSheet.newInstance(
-                    driverId = selectedAngkotId,
+                    angkotId = selectedAngkotId,
                     startLat = startLat,
                     startLong = startLong,
                     destinationLat = destinationLat,
@@ -285,11 +278,6 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
     override fun onMarkerClicked(angkotId: Int) {
         selectedAngkotId = angkotId
         if (isAdded) {
-            Toast.makeText(
-                requireContext(),
-                "Angkot dipilih: ID $angkotId",
-                Toast.LENGTH_SHORT
-            ).show()
             Log.d(TAG, "Angkot ID $angkotId dipilih")
         }
     }

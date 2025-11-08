@@ -34,8 +34,9 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
     private var _binding: FragmentWaitingAngkotBinding? = null
     private val binding get() = _binding!!
 
-    // Atribut untuk menyimpan data dari SumPassengerSheet
+    // [FIX] Pisahkan angkotId dan driverId
     private var driverId: Int = 0
+    private var angkotId: Int = 0
     private var startLat: Double = 0.0
     private var startLong: Double = 0.0
     private var destinationLat: Double = 0.0
@@ -44,6 +45,9 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
     private var totalPrice: Double = 0.0
     private var orderId: Int? = null
     private var polyline: String = ""
+    private var methodPayment: String = "tunai"
+
+    private var platNomor: String? = null  // [BARU] Simpan plat nomor
 
     private lateinit var pusher: Pusher
     private val subscribedChannels = mutableSetOf<Channel>()
@@ -60,9 +64,9 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
     ): View {
         _binding = FragmentWaitingAngkotBinding.inflate(inflater, container, false)
 
-        // Ambil data dari arguments
         arguments?.let {
             driverId = it.getInt("driver_id", 0)
+            angkotId = it.getInt("angkot_id", 0)
             startLat = it.getDouble("start_lat", 0.0)
             startLong = it.getDouble("start_long", 0.0)
             destinationLat = it.getDouble("destination_lat", 0.0)
@@ -70,7 +74,8 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
             numberOfPassengers = it.getInt("number_of_passengers", 0)
             totalPrice = it.getDouble("total_price", 0.0)
             polyline = it.getString("polyline", "")
-            Log.d(TAG, "Data diterima: driverId=$driverId, startLat=$startLat, startLong=$startLong, destinationLat=$destinationLat, destinationLong=$destinationLong, numberOfPassengers=$numberOfPassengers, totalPrice=$totalPrice, polyline=$polyline")
+            methodPayment = it.getString("method_payment", "tunai")
+            Log.d(TAG, "Data diterima: driverId=$driverId, angkotId=$angkotId, platNomor=$platNomor")
         }
 
         return binding.root
@@ -85,14 +90,12 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         observeCancelOrderState()
         observeETAState()
 
-        // Validasi data sebelum memanggil endpoint
         if (driverId == 0 || numberOfPassengers <= 0 || totalPrice <= 0.0) {
             Toast.makeText(requireContext(), "Data pesanan tidak valid", Toast.LENGTH_LONG).show()
-            Log.e(TAG, "Data tidak valid: driverId=$driverId, numberOfPassengers=$numberOfPassengers, totalPrice=$totalPrice")
             return
         }
 
-        // Panggil endpoint /create-order
+        // [FIX] Gunakan driverId untuk create order
         trackAngkotViewModel.createOrder(
             driverId = driverId,
             startLat = startLat,
@@ -100,31 +103,26 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
             destinationLat = destinationLat,
             destinationLong = destinationLong,
             numberOfPassengers = numberOfPassengers,
-            totalPrice = totalPrice
+            totalPrice = totalPrice,
+            methodPayment = methodPayment
         )
 
-        // Setup listener tombol batal
+        cancelAction()
+
+        val backCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {}
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
+    }
+
+    private fun cancelAction() {
         binding.layoutCancelAngkotWait.setOnCancelClickListener {
             orderId?.let { id ->
-                Log.d(TAG, "Cancel button clicked for orderId=$id")
                 trackAngkotViewModel.cancelOrder(id)
             } ?: run {
-                Log.e(TAG, "Order ID tidak tersedia untuk pembatalan")
                 Toast.makeText(requireContext(), "Pesanan tidak valid untuk dibatalkan", Toast.LENGTH_SHORT).show()
             }
         }
-
-        // Tambahkan callback untuk menangani tombol back
-        val backCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                // Kosongkan ini untuk memblokir tombol back
-            }
-        }
-
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            backCallback
-        )
     }
 
     private fun initPusher() {
@@ -132,58 +130,54 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         pusher = Pusher("d1373b327727bf1ce9cf", options)
         pusher.connection.bind(ConnectionState.ALL, object : ConnectionEventListener {
             override fun onConnectionStateChange(change: ConnectionStateChange) {
-                Log.d(TAG, "Pusher state changed from ${change.previousState} to ${change.currentState}")
                 if (change.currentState == ConnectionState.DISCONNECTED) {
                     pusher.connect()
-                    Log.d(TAG, "Attempting to reconnect Pusher")
                 }
             }
 
             override fun onError(message: String, code: String?, e: Exception?) {
-                Log.e(TAG, "Pusher connection error: $message, code: $code, exception: ${e?.message}")
+                Log.e(TAG, "Pusher error: $message")
             }
         })
         pusher.connect()
-        Log.d(TAG, "Pusher initialized")
 
-        // Berlangganan ke channel posisi angkot
+        // [FIX] Gunakan angkotId untuk channel
         subscribeToAngkotPosition()
     }
 
     private fun subscribeToAngkotPosition() {
-        val channelName = "angkot.$driverId"
+        val channelName = "angkot.$angkotId"
         val channel = pusher.subscribe(channelName)
         channel.bind("App\\Events\\AngkotLocationUpdated") { event ->
             try {
-                Log.d(TAG, "Received event on $channelName: ${event.data}")
                 val data = JSONObject(event.data)
-                val id = data.getInt("id")
+                val id = data.getInt("id")  // angkotId
                 val lat = data.getDouble("lat")
                 val lng = data.getDouble("long")
+
                 if (isAdded) {
                     requireActivity().runOnUiThread {
                         val mapsFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot) as? MapsFragment
-                        mapsFragment?.updateAngkotMarker(id, lat, lng)
+                        // [FIX] Kirim platNomor jika ada
+                        mapsFragment?.updateAngkotMarker(id, lat, lng, platNomor)
                         mapsFragment?.animateCameraToLocation(lat, lng)
-                        Log.d(TAG, "Updating marker and animating camera for Angkot $id: Lat=$lat, Lng=$lng")
-                        // Panggil endpoint /get-eta dengan tujuan berdasarkan status
+
                         trackAngkotViewModel.getETA(
                             driverLat = lat,
                             driverLong = lng,
                             pickupLat = startLat,
                             pickupLong = startLong,
-                            destinationLat = destinationLat, // [Baru]
-                            destinationLong = destinationLong // [Baru]
+                            destinationLat = destinationLat,
+                            destinationLong = destinationLong
                         )
                     }
                 }
                 trackAngkotViewModel.updateAngkotPosition(id, lat, lng)
             } catch (e: Exception) {
-                Log.e(TAG, "Error parsing angkot position message: ${e.message}")
+                Log.e(TAG, "Error parsing position: ${e.message}")
             }
         }
         subscribedChannels.add(channel)
-        Log.d(TAG, "Subscribed to angkot channel: $channelName")
     }
 
     private fun subscribeToOrderStatus(orderId: Int) {
@@ -191,20 +185,16 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         val channel = pusher.subscribe(channelName)
         channel.bind("App\\Events\\OrderStatusUpdated") { event ->
             try {
-                Log.d(TAG, "Received event on $channelName: ${event.data}")
                 val data = JSONObject(event.data)
                 val status = data.getString("status")
                 if (isAdded) {
                     requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Status pesanan: $status", Toast.LENGTH_SHORT).show()
-                        Log.d(TAG, "Status pesanan diperbarui: $status")
                         if (status == "dijemput") {
                             binding.layoutCancelAngkotWait.hideCancelButton()
                             binding.tittleWaitingAngkot.text = "Menuju Tujuan"
-                            // [Baru] Perbarui status pesanan dan panggil /get-eta
                             trackAngkotViewModel.updateOrderStatus("dijemput")
-                            // Ambil posisi driver terbaru dari angkotPositions
-                            val driverPosition = trackAngkotViewModel.angkotPositions.value?.get(driverId)
+
+                            val driverPosition = trackAngkotViewModel.angkotPositions.value?.get(angkotId)
                             if (driverPosition != null) {
                                 trackAngkotViewModel.getETA(
                                     driverLat = driverPosition.latitude,
@@ -214,96 +204,78 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                                     destinationLat = destinationLat,
                                     destinationLong = destinationLong
                                 )
-                            } else {
-                                Log.e(TAG, "Driver position not available for ETA on status dijemput")
                             }
-                            // Animasi kamera ke polyline
+
                             val mapsFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot) as? MapsFragment
                             if (mapsFragment != null && polyline.isNotEmpty()) {
                                 try {
                                     val points = PolyUtil.decode(polyline)
                                     if (points.isNotEmpty()) {
                                         mapsFragment.animateCameraToBounds(points)
-                                        Log.d(TAG, "Animating camera to polyline bounds on status dijemput")
-                                    } else {
-                                        Log.e(TAG, "No points decoded from polyline on status dijemput")
-                                        Toast.makeText(requireContext(), "Gagal menampilkan rute", Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "Error decoding polyline on status dijemput: ${e.message}")
                                     Toast.makeText(requireContext(), "Gagal menampilkan rute", Toast.LENGTH_SHORT).show()
                                 }
-                            } else {
-                                Log.e(TAG, "MapsFragment not found or polyline empty on status dijemput: polyline=$polyline")
-                                Toast.makeText(requireContext(), "Gagal menampilkan rute", Toast.LENGTH_SHORT).show()
                             }
                         }
-                        if (status == "selesai") {
-                            navigateToMainActivity()
-                        }
-                        if (status == "dibatalkan") {
-                            Toast.makeText(requireContext(), "Pesanan telah dibatalkan", Toast.LENGTH_SHORT).show()
-                            Log.d(TAG, "Pesanan dibatalkan, kembali ke MapRouteFragment")
+                        if (status == "selesai" || status == "dibatalkan") {
                             navigateToMainActivity()
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error parsing order status message: ${e.message}")
+                Log.e(TAG, "Error parsing order status: ${e.message}")
             }
         }
         subscribedChannels.add(channel)
-        Log.d(TAG, "Subscribed to order channel: $channelName")
     }
 
     private fun observeOrderState() {
         trackAngkotViewModel.orderState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is ResultState.Loading -> {
-                    showLoading(true)
-                }
+                is ResultState.Loading -> showLoading(true)
                 is ResultState.Success -> {
                     val order = state.data.data
                     orderId = order?.orderId
                     order?.fullName?.let { binding.layoutCancelAngkotWait.setFullName(it) }
-                    order?.platNomor?.let { binding.layoutCancelAngkotWait.setPlateNumber(it) }
+
+                    // [BARU] Ambil platNomor dari response
+                    platNomor = order?.platNomor
+                    platNomor?.let { binding.layoutCancelAngkotWait.setPlateNumber(it) }
+
                     orderId?.let {
                         subscribeToOrderStatus(it)
                         binding.layoutCancelAngkotWait.startCancelTimer()
                     }
-                    // Inisialisasi marker awal dan animasi kamera
+
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot) as? MapsFragment
                     order?.lat?.let { lat ->
                         order.long?.let { lng ->
                             if (lat != 0.0 && lng != 0.0) {
-                                mapsFragment?.updateAngkotMarker(driverId, lat, lng)
+                                // [FIX] Gunakan angkotId, kirim platNomor
+                                mapsFragment?.updateAngkotMarker(angkotId, lat, lng, platNomor)
                                 mapsFragment?.animateCameraToLocation(lat, lng)
-                                Log.d(TAG, "Inisialisasi marker awal untuk Angkot $driverId: Lat=$lat, Lng=$lng")
-                                // Panggil /get-eta saat pesanan dibuat
+
                                 trackAngkotViewModel.getETA(
                                     driverLat = lat,
                                     driverLong = lng,
                                     pickupLat = startLat,
                                     pickupLong = startLong,
-                                    destinationLat = destinationLat, // [Baru]
-                                    destinationLong = destinationLong // [Baru]
+                                    destinationLat = destinationLat,
+                                    destinationLong = destinationLong
                                 )
                             } else {
                                 mapsFragment?.animateCameraToLocation(startLat, startLong)
-                                Log.d(TAG, "Posisi angkot tidak valid, animasi ke startLat=$startLat, startLong=$startLong")
                             }
                         }
                     } ?: run {
                         mapsFragment?.animateCameraToLocation(startLat, startLong)
-                        Log.d(TAG, "Tidak ada posisi angkot, animasi ke startLat=$startLat, startLong=$startLong")
                     }
                     showLoading(false)
-                    Log.d(TAG, "Pesanan dibuat: orderId=$orderId, fullName=${order?.fullName}, platNomor=${order?.platNomor}, lat=${order?.lat}, long=${order?.long}")
                 }
                 is ResultState.Error -> {
                     showLoading(false)
                     Toast.makeText(requireContext(), "Gagal membuat pesanan: ${state.error}", Toast.LENGTH_LONG).show()
-                    Log.e(TAG, "Error membuat pesanan: ${state.error}")
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.container, MapRouteFragment())
                         .commit()
@@ -316,8 +288,8 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         trackAngkotViewModel.etaState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ResultState.Loading -> {
-                    Log.d(TAG, "Loading ETA")
-                    // Tidak menampilkan loading untuk ETA agar UI tetap responsif
+                    // Tidak tampilkan loading agar tidak mengganggu UI
+                    Log.d(TAG, "Loading ETA...")
                 }
                 is ResultState.Success -> {
                     val eta = state.data.data?.eta ?: "N/A"
@@ -339,13 +311,11 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                 is ResultState.Loading -> {
                     showLoading(true)
                     binding.layoutCancelAngkotWait.showCancelButton()
-                    Log.d(TAG, "Canceling order, showing loading")
                 }
                 is ResultState.Success -> {
                     showLoading(false)
                     binding.layoutCancelAngkotWait.hideCancelButton()
                     Toast.makeText(requireContext(), "Pesanan berhasil dibatalkan", Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, "Cancel order successful: message=${state.data.message}")
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.container, MapRouteFragment())
                         .commit()
@@ -353,47 +323,28 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                 is ResultState.Error -> {
                     showLoading(false)
                     binding.layoutCancelAngkotWait.showCancelButton()
-                    Toast.makeText(requireContext(), "Gagal membatalkan pesanan: ${state.error}", Toast.LENGTH_LONG).show()
-                    Log.e(TAG, "Error canceling order: ${state.error}")
+                    Toast.makeText(requireContext(), "Gagal membatalkan: ${state.error}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
     private fun loadMaps() {
-        val layoutPositionMaps = binding.root.findViewById<View>(R.id.map_waiting_angkot)
-        if (layoutPositionMaps == null) {
-            Log.e(TAG, "FrameLayout with ID map_waiting_angkot not found in layout")
-            return
-        }
         val existingFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot)
         if (existingFragment == null) {
             childFragmentManager.beginTransaction()
                 .replace(R.id.map_waiting_angkot, MapsFragment())
                 .commit()
             childFragmentManager.executePendingTransactions()
-            Log.d(TAG, "MapsFragment attached")
-        } else {
-            Log.d(TAG, "MapsFragment already exists")
         }
 
         if (polyline.isNotEmpty()) {
-            Log.d(TAG, "Attempting to display polyline after map initialization: $polyline")
             val mapsFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot) as? MapsFragment
-            if (mapsFragment != null) {
-                mapsFragment.mapReadyLiveData.observe(viewLifecycleOwner) { isReady ->
-                    if (isReady) {
-                        Log.d(TAG, "Map is ready, displaying polyline")
-                        mapsFragment.displayPolyline(polyline)
-                    } else {
-                        Log.d(TAG, "Map not ready yet for polyline display")
-                    }
+            mapsFragment?.mapReadyLiveData?.observe(viewLifecycleOwner) { isReady ->
+                if (isReady) {
+                    mapsFragment.displayPolyline(polyline)
                 }
-            } else {
-                Log.e(TAG, "MapsFragment not found after initialization")
             }
-        } else {
-            Log.e(TAG, "Polyline empty: polyline=$polyline")
         }
     }
 
@@ -406,8 +357,9 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
     }
 
     private fun navigateToMainActivity() {
-        val intent = Intent(requireContext(), MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val intent = Intent(requireContext(), MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(intent)
     }
 
@@ -417,24 +369,26 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         subscribedChannels.clear()
         pusher.disconnect()
         binding.layoutCancelAngkotWait.stopCancelTimer()
-        Log.d(TAG, "Pusher disconnected and channels unsubscribed")
         _binding = null
     }
 
     companion object {
         fun newInstance(
             driverId: Int,
+            angkotId: Int,
             startLat: Double,
             startLong: Double,
             destinationLat: Double,
             destinationLong: Double,
             numberOfPassengers: Int,
             totalPrice: Double,
-            polyline: String = ""
+            polyline: String = "",
+            methodPayment: String
         ): WaitingAngkotFragment {
             return WaitingAngkotFragment().apply {
                 arguments = Bundle().apply {
                     putInt("driver_id", driverId)
+                    putInt("angkot_id", angkotId)
                     putDouble("start_lat", startLat)
                     putDouble("start_long", startLong)
                     putDouble("destination_lat", destinationLat)
@@ -442,6 +396,7 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                     putInt("number_of_passengers", numberOfPassengers)
                     putDouble("total_price", totalPrice)
                     putString("polyline", polyline)
+                    putString("method_payment", methodPayment)
                 }
             }
         }

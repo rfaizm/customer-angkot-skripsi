@@ -31,7 +31,8 @@ class GetClosestTrayekUseCase(
                         imageUrl = items.first().trayek?.imageUrl,
                         angkotIds = items.mapNotNull { it.angkotId },
                         latitudes = items.mapNotNull { it.lat?.toDoubleOrNull() },
-                        longitudes = items.mapNotNull { it.long?.toDoubleOrNull() }
+                        longitudes = items.mapNotNull { it.long?.toDoubleOrNull() },
+                        platNomors = items.mapNotNull { it.platNomor }  // [BARU] Tambahkan ini
                     )
                 }
                 Result.success(trayekItems)

@@ -133,15 +133,6 @@ class HomeFragment : Fragment(), LocationPermissionListener {
                     val lat = data.getDouble("lat")
                     val lng = data.getDouble("long")
                     Log.d("HomeFragment", "Received position update: id=$id, lat=$lat, lng=$lng")
-                    if (isAdded) {
-                        requireActivity().runOnUiThread {
-                            Toast.makeText(
-                                requireContext(),
-                                "Angkot $id updated: Lat=$lat, Lng=$lng",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
                     homeViewModel.updateAngkotPosition(id, lat, lng)
                 } catch (e: Exception) {
                     Log.e("HomeFragment", "Error parsing Pusher message: ${e.message}")
@@ -192,11 +183,6 @@ class HomeFragment : Fragment(), LocationPermissionListener {
                     val latLng = state.data
                     userLatitude = latLng.latitude
                     userLongitude = latLng.longitude
-                    Toast.makeText(
-                        requireContext(),
-                        "Lokasi: Lat=${latLng.latitude}, Lng=${latLng.longitude}",
-                        Toast.LENGTH_LONG
-                    ).show()
                     val mapsFragment = childFragmentManager.findFragmentById(
                         binding.root.findViewById<LayoutPositionAngkot>(R.id.position_angkot).frameMaps.id
                     ) as? MapsFragment
@@ -229,11 +215,14 @@ class HomeFragment : Fragment(), LocationPermissionListener {
                             mapsFragment?.clearAngkotMarkers()
                             val locations = mutableListOf<LatLng>()
                             selectedTrayek.angkotIds.forEachIndexed { index, angkotId ->
-                                if (index < selectedTrayek.latitudes.size && index < selectedTrayek.longitudes.size) {
+                                if (index < selectedTrayek.latitudes.size &&
+                                    index < selectedTrayek.longitudes.size &&
+                                    index < selectedTrayek.platNomors.size) {  // [BARU] Cek platNomors
                                     val lat = selectedTrayek.latitudes[index]
                                     val lng = selectedTrayek.longitudes[index]
+                                    val platNomor = selectedTrayek.platNomors[index]  // [BARU]
                                     if (lat != 0.0 && lng != 0.0) {
-                                        mapsFragment?.updateAngkotMarker(angkotId, lat, lng)
+                                        mapsFragment?.updateAngkotMarker(angkotId, lat, lng, platNomor)  // [BARU] Kirim platNomor
                                         locations.add(LatLng(lat, lng))
                                     }
                                 }

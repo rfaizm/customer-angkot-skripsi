@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.customerangkot.data.api.dto.DataHistoryItem
 import com.example.customerangkot.databinding.ItemHistoryBinding
 import com.example.customerangkot.utils.DataHistory
+import com.example.customerangkot.utils.Utils.capitalizeWords
 import java.util.Locale
 
 class HistoryAdapter(
@@ -16,16 +17,19 @@ class HistoryAdapter(
         private val binding: ItemHistoryBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(dataHistory: DataHistoryItem) {
-            binding.trayekAngkot.text = dataHistory.trayek ?: "-"
-            binding.fullname.text = dataHistory.driverName ?: "-"
-            binding.numberPlat.text = dataHistory.vehiclePlate ?: "-"
-            binding.date.text = dataHistory.orderDate ?: "-"
+            binding.trayekAngkot.text = dataHistory.trayek?.capitalizeWords() ?: "-"
+            binding.fullname.text = dataHistory.driverName?.capitalizeWords() ?: "-"
+            binding.numberPlat.text = dataHistory.vehiclePlate?.capitalizeWords() ?: "-"
+            binding.date.text = dataHistory.orderDate?.capitalizeWords() ?: "-"
+            binding.methodPayment.text = dataHistory.paymentMethod?.capitalizeWords() ?: "-"
             // Format harga
             binding.price.text = dataHistory.totalPrice?.let {
                 "Rp. ${String.format(Locale("id", "ID"), "%,d", it).replace(",", ".")}"
             } ?: "-"
         }
     }
+
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
         val binding = ItemHistoryBinding.inflate(

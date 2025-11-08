@@ -4,21 +4,26 @@ import android.content.Context
 import com.example.customerangkot.data.api.ApiConfig
 import com.example.customerangkot.data.datasource.LocationDataSourceImpl
 import com.example.customerangkot.data.datasource.OrderDataSourceImpl
+import com.example.customerangkot.data.datasource.PusherDataSource
+import com.example.customerangkot.data.datasource.PusherDataSourceImpl
 import com.example.customerangkot.data.datasource.TrayekDataSourceImpl
 import com.example.customerangkot.data.datasource.UserDataSourceImpl
 import com.example.customerangkot.data.repository.LocationRepositoryImpl
 import com.example.customerangkot.data.preference.UserPreference
 import com.example.customerangkot.data.preference.dataStore
 import com.example.customerangkot.data.repository.OrderRepositoryImpl
+import com.example.customerangkot.data.repository.PusherRepositoryImpl
 import com.example.customerangkot.data.repository.TrayekRepositoryImpl
 import com.example.customerangkot.data.repository.UserRepositoryImpl
 import com.example.customerangkot.domain.repository.LocationRepository
 import com.example.customerangkot.domain.repository.OrderRepository
+import com.example.customerangkot.domain.repository.PusherRepository
 import com.example.customerangkot.domain.repository.TrayekRepository
 import com.example.customerangkot.domain.repository.UserRepository
 import com.example.customerangkot.domain.usecase.auth.LoginUseCase
 import com.example.customerangkot.domain.usecase.auth.LogoutUseCase
 import com.example.customerangkot.domain.usecase.auth.RegisterUseCase
+import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -28,12 +33,24 @@ import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
 import com.example.customerangkot.domain.usecase.user.GetHistoryUseCase
 import com.example.customerangkot.domain.usecase.user.GetProfileUseCase
 import com.example.customerangkot.domain.usecase.user.GetSaldoUseCase
 import com.example.customerangkot.domain.usecase.user.TopUpUseCase
+import com.pusher.client.Pusher
+import com.pusher.client.PusherOptions
 
 object Injection {
+    private fun providePusherDataSource(): PusherDataSource {
+        val options = PusherOptions().setCluster("ap1")
+        val pusher = Pusher("d1373b327727bf1ce9cf", options)
+        return PusherDataSourceImpl(pusher)
+    }
+
+    private fun providePusherRepository(): PusherRepository {
+        return PusherRepositoryImpl(providePusherDataSource())
+    }
     private fun provideUserRepository(context: Context): UserRepository {
         val apiService = ApiConfig.getApiService()
         val userPreference = UserPreference.getInstance(context.dataStore)
@@ -122,5 +139,13 @@ object Injection {
 
     fun provideGetETAUseCase(context: Context): GetETAUseCase {
         return GetETAUseCase(provideOrderRepository(context), UserPreference.getInstance(context.dataStore))
+    }
+
+    fun provideCheckPusherConnectionUseCase(): CheckPusherConnectionUseCase {
+        return CheckPusherConnectionUseCase(providePusherRepository())
+    }
+
+    fun provideGetDriverIdWithAngkotIdUseCase(context: Context): GetDriverIdWithAngkotIdUseCase {
+        return GetDriverIdWithAngkotIdUseCase(provideTrayekRepository(context), UserPreference.getInstance(context.dataStore))
     }
 }

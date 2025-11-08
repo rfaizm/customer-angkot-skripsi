@@ -9,8 +9,9 @@ data class TrayekItem(
     val description: String?,
     val imageUrl: String?,
     val angkotIds: List<Int>,
-    val latitudes: List<Double>, // Baris 9: Daftar latitude
-    val longitudes: List<Double> // Baris 10: Daftar longitude
+    val latitudes: List<Double>,
+    val longitudes: List<Double>,
+    val platNomors: List<String> = emptyList()  // [BARU] Tambahkan ini
 )
 
 

@@ -13,15 +13,16 @@ interface OrderRepository {
         destinationLat: Double,
         destinationLong: Double,
         numberOfPassengers: Int,
-        totalPrice: Double
+        totalPrice: Double,
+        methodPayment: String // [Baru]
     ): OrderCreatedResponse
 
-    suspend fun cancelOrder(token: String, orderId: Int): OrderCancelResponse // [Baru]
+    suspend fun cancelOrder(token: String, orderId: Int): OrderCancelResponse
     suspend fun getETA(
         token: String,
         startLat: Double,
         startLong: Double,
         endLat: Double,
         endLong: Double
-    ): GetETAResponse // [Baru]
+    ): GetETAResponse
 }
