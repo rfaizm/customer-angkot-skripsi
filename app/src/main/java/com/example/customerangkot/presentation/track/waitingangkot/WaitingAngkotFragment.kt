@@ -275,7 +275,7 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                 }
                 is ResultState.Error -> {
                     showLoading(false)
-                    Toast.makeText(requireContext(), "Gagal membuat pesanan: ${state.error}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.container, MapRouteFragment())
                         .commit()

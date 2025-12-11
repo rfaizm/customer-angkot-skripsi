@@ -8,4 +8,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="text_color_radio">@color/colorPrimary</color>
     <color name="nav_color">@color/colorDarkMode</color>
+    <color name="error">#D32F2F</color>
 </resources>

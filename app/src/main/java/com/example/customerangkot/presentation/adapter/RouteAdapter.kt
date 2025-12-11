@@ -2,6 +2,7 @@ package com.example.customerangkot.presentation.adapter
 
 import android.icu.text.NumberFormat
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.customerangkot.databinding.ItemTrackBinding
@@ -18,8 +19,16 @@ class RouteAdapter(
         fun bind(routeAngkot: RouteAngkot) {
             binding.trayekAngkot.text = routeAngkot.namaTrayek
             binding.textEta.text = routeAngkot.predictETA
-            val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-            binding.priceTrayek.text = formatter.format(routeAngkot.price).replace("Rp", "Rp. ").replace(",00", "")
+
+            if (routeAngkot.isIntegrated) {
+                val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+                binding.priceTrayek.text = formatter.format(routeAngkot.price).replace("Rp", "Rp. ").replace(",00", "")
+                binding.priceTrayek.visibility = View.VISIBLE
+                binding.perPerson.visibility = View.VISIBLE
+            } else {
+                binding.priceTrayek.visibility = View.GONE
+                binding.perPerson.visibility = View.GONE
+            }
 
             itemView.setOnClickListener {
                 onRouteSelected(routeAngkot)

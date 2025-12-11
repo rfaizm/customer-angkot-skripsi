@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.addTextChangedListener
 import com.example.customerangkot.R
 import com.example.customerangkot.databinding.ActivityRegisterBinding
 import com.example.customerangkot.di.ResultState
@@ -37,12 +38,29 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun setupActions() {
+        // 🔹 Pantau perubahan teks nomor HP
+        binding.inputNoHPInputText.addTextChangedListener { text ->
+            val noHp = text.toString().trim()
+
+            if (noHp.startsWith("+62")) {
+                binding.inputNoHPTextLayout.error = "Gunakan format 08..., bukan +62"
+            } else if (noHp.isNotEmpty() && !noHp.startsWith("08")) {
+                binding.inputNoHPTextLayout.error = "Nomor HP harus diawali 08"
+            } else {
+                binding.inputNoHPTextLayout.error = null
+            }
+        }
+
+        // 🔹 Tombol daftar
         binding.buttonSignup.setOnClickListener {
             val name = binding.inputFullnameInputText.text.toString().trim()
             val email = binding.inputEmailInputText.text.toString().trim()
             val noHp = binding.inputNoHPInputText.text.toString().trim()
             val password = binding.inputPasswordInputText.text.toString().trim()
-            viewModel.register(name, email, noHp, password)
+
+            if (validateInput(name, email, noHp, password)) {
+                viewModel.register(name, email, noHp, password)
+            }
         }
 
         binding.signUp.setOnClickListener {
@@ -50,6 +68,45 @@ class RegisterActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
+    private fun validateInput(name: String, email: String, noHp: String, password: String): Boolean {
+        var isValid = true
+
+        if (name.isBlank()) {
+            binding.inputFullnameTextLayout.error = "Nama tidak boleh kosong"
+            isValid = false
+        } else {
+            binding.inputFullnameTextLayout.error = null
+        }
+
+        if (email.isBlank() || !email.contains("@")) {
+            binding.inputEmailTextLayout.error = "Email tidak valid"
+            isValid = false
+        } else {
+            binding.inputEmailTextLayout.error = null
+        }
+
+        if (noHp.startsWith("+62")) {
+            binding.inputNoHPTextLayout.error = "Gunakan format 08..., bukan +62"
+            isValid = false
+        } else if (!noHp.startsWith("08")) {
+            binding.inputNoHPTextLayout.error = "Nomor HP harus diawali 08"
+            isValid = false
+        } else {
+            binding.inputNoHPTextLayout.error = null
+        }
+
+        if (password.length < 8) {
+            binding.inputPasswordTextLayout.error = "Password minimal 8 karakter"
+            isValid = false
+        } else {
+            binding.inputPasswordTextLayout.error = null
+        }
+
+        return isValid
+    }
+
+
 
     private fun observeRegisterState() {
         viewModel.registerState.observe(this) { state ->

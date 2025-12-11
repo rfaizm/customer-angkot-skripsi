@@ -28,5 +28,6 @@ data class RouteAngkot(
     val startLat : Double,
     val startLong : Double,
     val destinationLat : Double,
-    val destinationLong : Double
+    val destinationLong : Double,
+    val isIntegrated: Boolean = trayekId > 0
 )

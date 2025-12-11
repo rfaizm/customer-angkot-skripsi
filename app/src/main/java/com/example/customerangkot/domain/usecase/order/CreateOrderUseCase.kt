@@ -17,16 +17,12 @@ class CreateOrderUseCase(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String // [Baru]
+        methodPayment: String
     ): Result<OrderCreatedResponse> {
         return try {
-            Log.d("CreateOrderUseCase", "Memulai pembuatan pesanan: driverId=$driverId, startLat=$startLat, startLong=$startLong, destinationLat=$destinationLat, destinationLong=$destinationLong, numberOfPassengers=$numberOfPassengers, totalPrice=$totalPrice, methodPayment=$methodPayment")
             val token = userPreference.getAuthToken()
-            if (token == null) {
-                Log.e("CreateOrderUseCase", "Token tidak ditemukan")
-                return Result.failure(Exception("Token tidak valid"))
-            }
-            Log.d("CreateOrderUseCase", "Menggunakan token: $token")
+                ?: return Result.failure(Exception("Token tidak valid"))
+
             val response = orderRepository.createOrder(
                 token = token,
                 driverId = driverId,
@@ -36,13 +32,12 @@ class CreateOrderUseCase(
                 destinationLong = destinationLong,
                 numberOfPassengers = numberOfPassengers,
                 totalPrice = totalPrice,
-                methodPayment = methodPayment // [Baru]
+                methodPayment = methodPayment
             )
-            Log.d("CreateOrderUseCase", "Pesanan berhasil dibuat: orderId=${response.data?.orderId}, methodPayment=${response.data?.methodPayment}")
             Result.success(response)
         } catch (e: Exception) {
-            Log.e("CreateOrderUseCase", "Error: ${e.message}", e)
-            Result.failure(Exception("Gagal membuat pesanan: ${e.message}"))
+            // [FIX] Kirim pesan asli dari backend
+            Result.failure(e)
         }
     }
 }

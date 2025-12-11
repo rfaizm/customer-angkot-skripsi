@@ -142,6 +142,12 @@ class SumPassengerSheet : BottomSheetDialogFragment() {
             return
         }
 
+        // [BARU] Validasi maksimal 14 penumpang
+        if (numberOfPassengers > 14) {
+            Toast.makeText(requireContext(), "Kapasitas angkot maksimal 14 penumpang", Toast.LENGTH_LONG).show()
+            return
+        }
+
         if (angkotId == null) {
             Toast.makeText(requireContext(), "Pilih angkot terlebih dahulu", Toast.LENGTH_SHORT).show()
             return

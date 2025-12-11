@@ -6,6 +6,8 @@ import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
 import com.example.customerangkot.data.preference.UserPreference
+import org.json.JSONObject
+import retrofit2.Response
 
 class OrderDataSourceImpl(
     private val apiService: ApiService,
@@ -23,11 +25,11 @@ class OrderDataSourceImpl(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String // [Baru]
+        methodPayment: String
     ): OrderCreatedResponse {
-        try {
-            Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice, methodPayment=$methodPayment")
-            return apiService.createOrder(
+        return try {
+            Log.d(TAG, "Creating order: driverId=$driverId, totalPrice=$totalPrice, method=$methodPayment")
+            val response: Response<OrderCreatedResponse> = apiService.createOrder(
                 "Bearer $token",
                 driverId,
                 startLat,
@@ -38,8 +40,39 @@ class OrderDataSourceImpl(
                 totalPrice.toInt(),
                 methodPayment
             )
+
+            if (response.isSuccessful) {
+                response.body() ?: throw Exception("Respons kosong dari server")
+            } else {
+                val errorBody = response.errorBody()?.string() ?: ""
+                Log.e(TAG, "Create order failed: HTTP ${response.code()}, Body: $errorBody")
+
+                val errorMessage = try {
+                    val json = JSONObject(errorBody)
+                    when (response.code()) {
+                        400, 403, 404 -> {
+                            json.optString("message", "Gagal membuat pesanan")
+                        }
+                        422 -> {
+                            val errors = json.optJSONObject("errors")
+                            val firstError = errors?.keys()?.next()?.let { key ->
+                                errors.getJSONArray(key).getString(0)
+                            }
+                            firstError ?: json.optString("message", "Validasi gagal")
+                        }
+                        500 -> {
+                            json.optString("message", "Server error")
+                        }
+                        else -> "Error ${response.code()}: ${response.message()}"
+                    }
+                } catch (e: Exception) {
+                    "Gagal membuat pesanan"
+                }
+
+                throw Exception(errorMessage)
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating order: ${e.message}", e)
+            Log.e(TAG, "Error in createOrder: ${e.message}", e)
             throw e
         }
     }

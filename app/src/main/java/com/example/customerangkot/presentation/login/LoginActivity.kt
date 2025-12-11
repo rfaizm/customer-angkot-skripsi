@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.customerangkot.MainActivity
@@ -15,6 +16,7 @@ import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.di.ViewModelFactory
 import com.example.customerangkot.presentation.register.RegisterActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding : ActivityLoginBinding
@@ -80,8 +82,9 @@ class LoginActivity : AppCompatActivity() {
                         .setTitle("Berhasil!")
                         .setMessage("Login berhasil.")
                         .setPositiveButton("OK") { _, _ ->
-                            val intent = Intent(this, MainActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                            val intent = Intent(this, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
                             startActivity(intent)
                             finish()
                         }
@@ -89,7 +92,16 @@ class LoginActivity : AppCompatActivity() {
                 }
                 is ResultState.Error -> {
                     showLoading(false)
-                    Toast.makeText(this, state.error, Toast.LENGTH_LONG).show()
+                    // [BARU] Gunakan Snackbar
+                    Snackbar.make(
+                        binding.root,
+                        state.error,  // ← Pesan dari backend
+                        Snackbar.LENGTH_LONG
+                    ).apply {
+                        setBackgroundTint(ContextCompat.getColor(context, R.color.error))
+                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                        show()
+                    }
                 }
             }
         }

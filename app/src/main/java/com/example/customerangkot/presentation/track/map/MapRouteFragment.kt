@@ -239,39 +239,50 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 startLat = it.startLat ?: 0.0,
                 startLong = it.startLong ?: 0.0,
                 destinationLat = it.destinationLat ?: 0.0,
-                destinationLong = it.destinationLong ?: 0.0
+                destinationLong = it.destinationLong ?: 0.0,
+                isIntegrated = (it.id ?: 0) > 0  // [BARU]
             )
         }
-        val routeAdapter = RouteAdapter(routeList, { selectedRoute ->
-            val trayekItem = trayeks.find { it.id == selectedRoute.trayekId }
-            val departureLocation = trayekItem?.departure ?: "lokasi tujuan"
 
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Konfirmasi Posisi")
-                .setMessage("Pastikan anda sudah diposisi $departureLocation")
-                .setPositiveButton("Ya") { _, _ ->
-                    // Navigasi ke ChooseAngkotFragment dengan data
-                    val bundle = Bundle().apply {
-                        putInt("trayek_id", selectedRoute.trayekId)
-                        putDouble("start_lat", selectedRoute.startLat)
-                        putDouble("start_long", selectedRoute.startLong)
-                        putDouble("destination_lat", selectedRoute.destinationLat)
-                        putDouble("destination_long", selectedRoute.destinationLong)
-                        putDouble("price", selectedRoute.price)
-                        putString("polyline", selectedRoute.polyline)
+        val routeAdapter = RouteAdapter(routeList) { selectedRoute ->
+            if (selectedRoute.isIntegrated) {
+                // [LAMA] Navigasi ke ChooseAngkotFragment
+                val trayekItem = trayeks.find { it.id == selectedRoute.trayekId }
+                val departureLocation = trayekItem?.departure ?: "lokasi tujuan"
+
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Konfirmasi Posisi")
+                    .setMessage("Pastikan anda sudah di posisi $departureLocation")
+                    .setPositiveButton("Ya") { _, _ ->
+                        val bundle = Bundle().apply {
+                            putInt("trayek_id", selectedRoute.trayekId)
+                            putDouble("start_lat", selectedRoute.startLat)
+                            putDouble("start_long", selectedRoute.startLong)
+                            putDouble("destination_lat", selectedRoute.destinationLat)
+                            putDouble("destination_long", selectedRoute.destinationLong)
+                            putDouble("price", selectedRoute.price)
+                            putString("polyline", selectedRoute.polyline)
+                        }
+                        val chooseAngkotFragment = ChooseAngkotFragment.newInstance().apply {
+                            arguments = bundle
+                        }
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.container, chooseAngkotFragment)
+                            .addToBackStack("ChooseAngkotFragment")
+                            .commit()
                     }
-                    val chooseAngkotFragment = ChooseAngkotFragment.newInstance().apply {
-                        arguments = bundle
-                    }
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.container, chooseAngkotFragment)
-                        .addToBackStack("ChooseAngkotFragment")
-                        .commit()
-                    Log.d("MapRouteFragment", "Navigasi ke ChooseAngkotFragment dengan trayekId: ${selectedRoute.trayekId}")
-                }
-                .setNegativeButton("Batal", null)
-                .show()
-        })
+                    .setNegativeButton("Batal", null)
+                    .show()
+            } else {
+                // [BARU] Dialog: Belum terintegrasi
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Informasi")
+                    .setMessage("Transportasi umum tersebut belum terintegrasi dengan sistem.")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+
         binding.rvTrackRoute.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = routeAdapter

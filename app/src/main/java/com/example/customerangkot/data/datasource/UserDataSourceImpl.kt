@@ -14,6 +14,7 @@ import com.example.customerangkot.domain.entity.UserSession
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.Flow
+import org.json.JSONObject
 import retrofit2.HttpException
 
 class UserDataSourceImpl(
@@ -58,8 +59,38 @@ class UserDataSourceImpl(
         try {
             Log.d(TAG, "Calling login with email=$email")
             val response = apiService.login(email, password)
-            Log.d(TAG, "Login response: $response")
-            return response
+            if (response.isSuccessful) {
+                return response.body() ?: throw Exception("Respons kosong dari server")
+            } else {
+                // [Aman] Tangkap error 401 & 422
+                val errorBody = response.errorBody()?.string() ?: ""
+                Log.e(TAG, "Login failed: HTTP ${response.code()}, Body: $errorBody")
+
+                val errorMessage = when (response.code()) {
+                    401 -> {
+                        try {
+                            val json = JSONObject(errorBody)
+                            json.optString("message", "Email atau kata sandi salah")
+                        } catch (e: Exception) {
+                            "Email atau kata sandi salah"
+                        }
+                    }
+                    422 -> {
+                        try {
+                            val json = JSONObject(errorBody)
+                            val errors = json.optJSONObject("errors")
+                            val firstError = errors?.keys()?.next()?.let { key ->
+                                errors.getJSONArray(key).getString(0)
+                            }
+                            firstError ?: "Validasi gagal"
+                        } catch (e: Exception) {
+                            "Validasi gagal"
+                        }
+                    }
+                    else -> "Gagal login: ${response.message()}"
+                }
+                throw Exception(errorMessage)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error in login: ${e.message}", e)
             throw e

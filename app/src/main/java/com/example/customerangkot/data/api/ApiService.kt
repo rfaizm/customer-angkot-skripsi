@@ -38,7 +38,7 @@ interface ApiService {
     suspend fun login(
         @Field("email") email : String,
         @Field("password") password : String
-    ) : LoginSuccessResponse
+    ) : Response<LoginSuccessResponse>
 
 
     @POST("logout")
@@ -103,7 +103,7 @@ interface ApiService {
         @Field("number_of_passengers") numberOfPassengers : Int,
         @Field("price") totalPrice : Int,
         @Field("payment_method") paymentMethod : String
-    ) : OrderCreatedResponse
+    ) : Response<OrderCreatedResponse>
 
     @FormUrlEncoded
     @PATCH("topup")

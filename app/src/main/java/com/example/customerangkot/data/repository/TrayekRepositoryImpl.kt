@@ -27,7 +27,9 @@ class TrayekRepositoryImpl(
     override suspend fun getAllAngkotByIdTrayek(token: String, lat: Double, lng: Double, trayekId: Int): FindClosestResponse {
         try {
             Log.d(TAG, "Fetching angkot by trayekId=$trayekId with lat=$lat, lng=$lng")
-            return trayekDataSource.getAllAngkotByIdTrayek(token, lat, lng, trayekId)
+            val response = trayekDataSource.getAllAngkotByIdTrayek(token, lat, lng, trayekId)
+            Log.d(TAG, "Response from getAllAngkotByIdTrayek: $response")
+            return response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching angkot by trayekId: ${e.message}", e)
             throw e

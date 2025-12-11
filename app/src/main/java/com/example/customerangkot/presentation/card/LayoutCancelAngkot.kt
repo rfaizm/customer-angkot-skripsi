@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.customerangkot.databinding.LayoutCancelAngkotBinding
 
@@ -21,10 +22,16 @@ class LayoutCancelAngkot @JvmOverloads constructor(
 
     init {
         binding.buttonSave.visibility = View.VISIBLE
-        // [Baru] Setup click listener untuk tombol batal
+
+        // [BARU] Click listener: cek apakah enabled
         binding.buttonSave.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked")
-            onCancelClickListener?.invoke()
+            if (binding.buttonSave.isEnabled) {
+                Log.d(TAG, "Cancel button clicked (enabled)")
+                onCancelClickListener?.invoke()
+            } else {
+                Log.d(TAG, "Cancel button clicked but disabled")
+                Toast.makeText(context, "Pesanan tidak bisa dibatalkan. Pastikan Anda menyelesaikan pesanan.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

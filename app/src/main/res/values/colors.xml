@@ -9,6 +9,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="blue">#4E5CFD</color>
+    <color name="error">#D32F2F</color>
 
     <color name="colorPrimary">#004D61</color>
     <color name="colorSecondary">#ABA2FA</color>

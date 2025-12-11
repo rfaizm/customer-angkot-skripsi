@@ -20,41 +20,42 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="person">/orng</string>
     <string-array name="trayeks">
-        <item>182:Abdul Muis - Cicaheum via Binong</item>
-        <item>183:Abdul Muis - Cicaheum via Aceh</item>
-        <item>184:Abdul Muis - Dago</item>
-        <item>185:Abdul Muis - Ledeng</item>
-        <item>186:Abdul Muis - Elang</item>
-        <item>187:Cicaheum - Ledeng</item>
-        <item>188:Cicaheum - Ciroyom</item>
-        <item>189:Cicaheum - Ciwastra - Derwati</item>
-        <item>190:Cicaheum - Cibaduyut</item>
-        <item>191:Stasiun Hall - Dago</item>
-        <item>192:Stasiun Hall - Sadang Serang</item>
-        <item>193:Ciumbuleuit - Stasiun Hall</item>
-        <item>194:Stasiun Hall - Gedebage</item>
-        <item>195:Stasiun Hall - Sarijadi</item>
-        <item>196:Stasiun Hall - Gunung Batu</item>
-        <item>197:Margahayu Raya - Ledeng</item>
-        <item>198:Dago - Riung Bandung</item>
-        <item>199:Caringin - Dago</item>
-        <item>200:Panghegar Permai - Dipatiukur</item>
-        <item>201:Ciroyom - Sarijadi</item>
-        <item>202:Ciroyom - Bumi Asri</item>
-        <item>203:Cikudapateuh - Ciroyom</item>
-        <item>204:Sederhana - Cipagolo</item>
-        <item>205:Sederhana - Cijerah</item>
-        <item>206:Sederhana - Cimindi</item>
-        <item>207:Ciwastra - Ujungberung</item>
-        <item>208:Cisitu - Tegallega</item>
-        <item>209:Cijerah - Ciwastra - Derwati</item>
-        <item>210:Elang - Ujungberung</item>
-        <item>211:Abdul Muis - Mengger</item>
-        <item>212:Cicadas - Elang</item>
-        <item>213:Antapani - Ciroyom</item>
-        <item>214:Cicadas - Cibiru - Panyileukan</item>
-        <item>215:Bumi Penyileukan - Sekemirung</item>
-        <item>216:Caringin - Sadang Serang</item>
-        <item>217:Cibaduyut - Kalapa</item>
+        <item>1:Abdul Muis - Cicaheum via Binong</item>
+        <item>2:Abdul Muis - Cicaheum via Aceh</item>
+        <item>3:Abdul Muis - Dago</item>
+        <item>4:Abdul Muis - Ledeng</item>
+        <item>5:Abdul Muis - Elang</item>
+        <item>6:Cicaheum - Ledeng</item>
+        <item>7:Cicaheum - Ciroyom</item>
+        <item>8:Cicaheum - Ciwastra - Derwati</item>
+        <item>9:Cicaheum - Cibaduyut</item>
+        <item>10:Stasiun Hall - Dago</item>
+        <item>11:Stasiun Hall - Sadang Serang</item>
+        <item>12:Ciumbuleuit - Stasiun Hall</item>
+        <item>13:Stasiun Hall - Gedebage</item>
+        <item>14:Stasiun Hall - Sarijadi</item>
+        <item>15:Stasiun Hall - Gunung Batu</item>
+        <item>16:Margahayu Raya - Ledeng</item>
+        <item>17:Dago - Riung Bandung</item>
+        <item>18:Caringin - Dago</item>
+        <item>19:Panghegar Permai - Dipatiukur</item>
+        <item>20:Ciroyom - Sarijadi</item>
+        <item>21:Ciroyom - Bumi Asri</item>
+        <item>22:Cikudapateuh - Ciroyom</item>
+        <item>23:Sederhana - Cipagolo</item>
+        <item>24:Sederhana - Cijerah</item>
+        <item>25:Sederhana - Cimindi</item>
+        <item>26:Ciwastra - Ujungberung</item>
+        <item>27:Cisitu - Tegallega</item>
+        <item>28:Cijerah - Ciwastra - Derwati</item>
+        <item>29:Elang - Ujungberung</item>
+        <item>30:Abdul Muis - Mengger</item>
+        <item>31:Cicadas - Elang</item>
+        <item>32:Antapani - Ciroyom</item>
+        <item>33:Cicadas - Cibiru - Panyileukan</item>
+        <item>34:Bumi Penyileukan - Sekemirung</item>
+        <item>35:Caringin - Sadang Serang</item>
+        <item>36:Cibaduyut - Kalapa</item>
+        <item>37:Cicaheum - Cileunyi</item>
     </string-array>
 </resources>
