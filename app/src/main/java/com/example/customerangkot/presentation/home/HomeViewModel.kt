@@ -26,8 +26,8 @@ class HomeViewModel(
     private val _trayekState = MutableLiveData<ResultState<List<TrayekItem>>>()
     val trayekState: LiveData<ResultState<List<TrayekItem>>> get() = _trayekState
 
-    private val _allTrayekState = MutableLiveData<ResultState<List<DataTrayekJSON>>>()
-    val allTrayekState: LiveData<ResultState<List<DataTrayekJSON>>> get() = _allTrayekState
+//    private val _allTrayekState = MutableLiveData<ResultState<List<DataTrayekJSON>>>()
+//    val allTrayekState: LiveData<ResultState<List<DataTrayekJSON>>> get() = _allTrayekState
 
     private val _selectedAngkotIds = MutableLiveData<List<Int>?>()
     val selectedAngkotIds: LiveData<List<Int>?> get() = _selectedAngkotIds
@@ -51,18 +51,18 @@ class HomeViewModel(
 
     fun getClosestTrayek(lat: Double, lng: Double) {
         _trayekState.value = ResultState.Loading
-        _allTrayekState.value = ResultState.Loading
+//        _allTrayekState.value = ResultState.Loading
         viewModelScope.launch {
             val trayekResult = getClosestTrayekUseCase.getUniqueTrayeks(lat, lng)
             _trayekState.value = when {
                 trayekResult.isSuccess -> ResultState.Success(trayekResult.getOrThrow())
                 else -> ResultState.Error(trayekResult.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
             }
-            val allTrayekResult = getClosestTrayekUseCase.getAllTrayeks(lat, lng)
-            _allTrayekState.value = when {
-                allTrayekResult.isSuccess -> ResultState.Success(allTrayekResult.getOrThrow())
-                else -> ResultState.Error(allTrayekResult.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
-            }
+//            val allTrayekResult = getClosestTrayekUseCase.getAllTrayeks(lat, lng)
+//            _allTrayekState.value = when {
+//                allTrayekResult.isSuccess -> ResultState.Success(allTrayekResult.getOrThrow())
+//                else -> ResultState.Error(allTrayekResult.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
+//            }
         }
     }
 

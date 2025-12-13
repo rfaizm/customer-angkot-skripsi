@@ -13,15 +13,16 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="8dp">
 
         <ImageView
             android:id="@+id/image_angkot"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="71dp"
+            android:layout_height="74dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
             tools:srcCompat="@tools:sample/avatars" />
 
         <TextView
@@ -30,7 +31,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
             android:text="Cicaheum - Ledeng"
             android:textSize="16sp"
             app:layout_constraintStart_toEndOf="@+id/image_angkot"
@@ -39,10 +39,10 @@
         <TextView
             android:id="@+id/text_information_trayek"
             style="@style/textReguler"
-            android:layout_width="240dp"
-            android:layout_height="49dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:text="Melewati Jln. Sudirman"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"

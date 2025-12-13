@@ -1,18 +1,19 @@
 package com.example.customerangkot.presentation.home
 
 import android.content.Intent
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import android.view.WindowManager
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.customerangkot.R
@@ -21,15 +22,13 @@ import com.example.customerangkot.data.preference.dataStore
 import com.example.customerangkot.databinding.FragmentHomeBinding
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.di.ViewModelFactory
-import com.example.customerangkot.domain.entity.InformationItem
-import com.example.customerangkot.presentation.adapter.InformationAdapter
 import com.example.customerangkot.presentation.adapter.TrayekAdapter
 import com.example.customerangkot.presentation.card.LayoutPositionAngkot
 import com.example.customerangkot.presentation.informationtrayek.DetailInformationTrayekActivity
 import com.example.customerangkot.presentation.maps.MapsFragment
 import com.example.customerangkot.presentation.topup.TopUpActivity
+import com.example.customerangkot.presentation.track.TrackAngkotActivity
 import com.example.customerangkot.utils.HorizontalSpaceItemDecoration
-import com.example.customerangkot.utils.InformationTrayek
 import com.example.customerangkot.utils.LocationPermissionListener
 import com.example.customerangkot.utils.Utils
 import com.google.android.gms.maps.model.LatLng
@@ -39,7 +38,6 @@ import com.pusher.client.channel.Channel
 import com.pusher.client.connection.ConnectionEventListener
 import com.pusher.client.connection.ConnectionState
 import com.pusher.client.connection.ConnectionStateChange
-import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class HomeFragment : Fragment(), LocationPermissionListener {
@@ -76,16 +74,85 @@ class HomeFragment : Fragment(), LocationPermissionListener {
         goToTopup()
         setupButton()
         setupUsername()
+        setupSearchView()
 
         observeLocationState()
         observeTrayekState()
-        observeAllTrayekState()
+//        observeAllTrayekState()
         observeAngkotPositions()
         observeGetSaldo()
+
+        requireActivity().window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+        )
 
         // Panggil endpoint /saldo saat fragment dimuat
         homeViewModel.getSaldo()
 
+    }
+
+    private fun setupSearchView() {
+        val searchView = binding.searchView
+
+        // Ambil atribut dari masing-masing component
+        val searchIcon =
+            searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
+
+        val searchText =
+            searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
+
+        // GANTI ICON SEARCH
+        searchIcon.setImageResource(R.drawable.ic_custom_search)
+
+        // GANTI MENJADI WARNA @COLOR/BLACK ---- Agar berubah saat ganti tema ----
+        searchIcon.setColorFilter(
+            ContextCompat.getColor(requireContext(), R.color.black),
+            PorterDuff.Mode.SRC_IN
+        )
+
+        // Ubah warna text
+        searchText.setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.black)
+        )
+
+        // Ubah warna hint ("Mau kemana hari ini?")
+        searchText.setHintTextColor(
+            ContextCompat.getColor(requireContext(), R.color.black)
+        )
+
+        searchView.apply {
+            // Hilangkan fokus dan keyboard
+            isFocusable = false
+            isFocusableInTouchMode = false
+            clearFocus()
+
+            // Matikan input
+            setIconified(true)
+
+            // Klik = pindah halaman
+            setOnClickListener {
+                navigateToTrackActivity()
+            }
+
+            // Jika ada gesture di dalam SearchView
+            setOnQueryTextFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    clearFocus()
+                    navigateToTrackActivity()
+                }
+            }
+        }
+    }
+
+
+    private fun navigateToTrackActivity() {
+        val intent = Intent(requireActivity(), TrackAngkotActivity::class.java)
+        startActivity(intent)
+
+        requireActivity().overridePendingTransition(
+            R.anim.slide_in_bottom,
+            R.anim.slide_out_top
+        )
     }
 
     private fun setupUsername() {
@@ -153,13 +220,13 @@ class HomeFragment : Fragment(), LocationPermissionListener {
 
 
     private fun setupButton() {
-        binding.detailToInformasi.setOnClickListener {
-            val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
-                userLatitude?.let { putExtra("LAT_USER", it) }
-                userLongitude?.let { putExtra("LONG_USER", it) }
-            }
-            startActivity(intent)
-        }
+//        binding.logoTopup.setOnClickListener {
+//            val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
+//                userLatitude?.let { putExtra("LAT_USER", it) }
+//                userLongitude?.let { putExtra("LONG_USER", it) }
+//            }
+//            startActivity(intent)
+//        }
     }
 
     private fun attachMaps() {
@@ -267,57 +334,57 @@ class HomeFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-    private fun observeAllTrayekState() {
-        homeViewModel.allTrayekState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is ResultState.Loading -> {
-                    showLoading(true)
-                }
-                is ResultState.Success -> {
-                    // Baris 222-237: Filter trayek unik berdasarkan trayekId
-                    val uniqueTrayeks = state.data
-                        .filter { it.trayek?.id != null } // Pastikan trayekId tidak null
-                        .groupBy { it.trayek!!.id } // Kelompokkan berdasarkan trayekId
-                        .map { (_, items) ->
-                            val firstItem = items.first() // Ambil item pertama untuk setiap trayekId
-                            InformationItem.TrayekInformation(
-                                name = firstItem.trayek?.name ?: "",
-                                description = firstItem.trayek?.description ?: "",
-                                trayekId = firstItem.trayek?.id ?: 0,
-                                imageUrl = firstItem.trayek?.imageUrl
-                            )
-                        }
-                    Log.d("HomeFragment", "Unique trayeks displayed: ${uniqueTrayeks.size} items")
-
-                    val informasiAdapter = InformationAdapter(uniqueTrayeks) { selectedItem ->
-                        val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
-                            when (selectedItem) {
-                                is InformationItem.AngkotInformation -> {
-                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
-                                }
-                                is InformationItem.TrayekInformation -> {
-                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
-                                }
-                            }
-                            userLatitude?.let { putExtra("LAT_USER", it) }
-                            userLongitude?.let { putExtra("LONG_USER", it) }
-                        }
-                        startActivity(intent)
-                    }
-                    binding.informasiAngkot.apply {
-                        layoutManager = LinearLayoutManager(context)
-                        adapter = informasiAdapter
-                    }
-                    showLoading(false)
-                }
-                is ResultState.Error -> {
-                    showLoading(false)
-                    Log.d("HomeFragment", "Error mendapatkan trayek: ${state.error}")
-                    Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
+//    private fun observeAllTrayekState() {
+//        homeViewModel.allTrayekState.observe(viewLifecycleOwner) { state ->
+//            when (state) {
+//                is ResultState.Loading -> {
+//                    showLoading(true)
+//                }
+//                is ResultState.Success -> {
+//                    // Baris 222-237: Filter trayek unik berdasarkan trayekId
+//                    val uniqueTrayeks = state.data
+//                        .filter { it.trayek?.id != null } // Pastikan trayekId tidak null
+//                        .groupBy { it.trayek!!.id } // Kelompokkan berdasarkan trayekId
+//                        .map { (_, items) ->
+//                            val firstItem = items.first() // Ambil item pertama untuk setiap trayekId
+//                            InformationItem.TrayekInformation(
+//                                name = firstItem.trayek?.name ?: "",
+//                                description = firstItem.trayek?.description ?: "",
+//                                trayekId = firstItem.trayek?.id ?: 0,
+//                                imageUrl = firstItem.trayek?.imageUrl
+//                            )
+//                        }
+//                    Log.d("HomeFragment", "Unique trayeks displayed: ${uniqueTrayeks.size} items")
+//
+//                    val informasiAdapter = InformationAdapter(uniqueTrayeks) { selectedItem ->
+//                        val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
+//                            when (selectedItem) {
+//                                is InformationItem.AngkotInformation -> {
+//                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
+//                                }
+//                                is InformationItem.TrayekInformation -> {
+//                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
+//                                }
+//                            }
+//                            userLatitude?.let { putExtra("LAT_USER", it) }
+//                            userLongitude?.let { putExtra("LONG_USER", it) }
+//                        }
+//                        startActivity(intent)
+//                    }
+//                    binding.informasiAngkot.apply {
+//                        layoutManager = LinearLayoutManager(context)
+//                        adapter = informasiAdapter
+//                    }
+//                    showLoading(false)
+//                }
+//                is ResultState.Error -> {
+//                    showLoading(false)
+//                    Log.d("HomeFragment", "Error mendapatkan trayek: ${state.error}")
+//                    Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
+//                }
+//            }
+//        }
+//    }
 
     private fun observeGetSaldo() {
         homeViewModel.getSaldo.observe(viewLifecycleOwner) { state ->
@@ -358,6 +425,11 @@ class HomeFragment : Fragment(), LocationPermissionListener {
 
     private fun showLoading(isLoading: Boolean) {
         binding.progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.searchView.clearFocus()
     }
 
     override fun onDestroyView() {

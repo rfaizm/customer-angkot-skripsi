@@ -116,6 +116,13 @@ class DetailInformationTrayekActivity : AppCompatActivity() {
         }
     }
 
+    // Fungsi buat nampilin gambar list angkot online
+    private fun showEmptyAngkot(isEmpty: Boolean) {
+        binding.rvDetailAngkot.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        binding.imageNoAngkot.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        binding.textNoAngkot.visibility = if (isEmpty) View.VISIBLE else View.GONE
+    }
+
     private fun setupSearching() {
         binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -175,6 +182,7 @@ class DetailInformationTrayekActivity : AppCompatActivity() {
             when (state) {
                 is ResultState.Loading -> {
                     binding.progressIndicator.visibility = View.VISIBLE
+                    showEmptyAngkot(false)
                     binding.rvDetailAngkot.adapter = null
                     Log.d("DetailInformationTrayekActivity", "Loading angkot data, reset rvDetailAngkot")
                 }
@@ -197,9 +205,12 @@ class DetailInformationTrayekActivity : AppCompatActivity() {
                     Log.d("DetailInformationTrayekActivity", "Cleared previous Pusher subscriptions")
 
                     if (angkotList.isEmpty()) {
-                        binding.rvDetailAngkot.adapter = InformationAdapter(emptyList()) { }
+                        showEmptyAngkot(true)
+                        binding.rvDetailAngkot.adapter = null
                         Log.d("DetailInformationTrayekActivity", "No angkot online, rvDetailAngkot set to empty")
                     } else {
+                        showEmptyAngkot(false)
+
                         angkotList.forEach { angkot ->
                             if (angkot.latitude != 0.0 && angkot.longtitude != 0.0) {
                                 mapsFragment?.updateAngkotMarker(
@@ -238,6 +249,7 @@ class DetailInformationTrayekActivity : AppCompatActivity() {
                 }
                 is ResultState.Error -> {
                     binding.progressIndicator.visibility = View.GONE
+                    showEmptyAngkot(true)
                     binding.rvDetailAngkot.adapter = null
                     val mapsFragment = supportFragmentManager.findFragmentById(R.id.map_detail_trayek) as? MapsFragment
                     mapsFragment?.clearAngkotMarkers()

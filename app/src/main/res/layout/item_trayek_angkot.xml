@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:padding="10dp"
     app:cardElevation="8dp"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="8dp"
     app:cardBackgroundColor="@color/colorPrimary"
     app:strokeWidth="0dp"
     app:strokeColor="@android:color/transparent">
@@ -18,12 +18,13 @@
 
         <TextView
             android:id="@+id/name_trayek_angkot"
+            style="@style/textWhite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="@style/textWhite"
             android:gravity="center"
-            android:padding="16dp"
+            android:padding="10dp"
             android:text="Cicaheum - Ledeng"
+            android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
