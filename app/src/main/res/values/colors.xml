@@ -20,5 +20,7 @@
     <color name="shimmerContent">#DDDDDD</color>
     <color name="shimmerBackground">#7F000000</color>
 
+    <color name="colorOrder">#198515</color>
+
 
 </resources>

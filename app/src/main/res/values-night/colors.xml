@@ -9,4 +9,5 @@
     <color name="text_color_radio">@color/colorPrimary</color>
     <color name="nav_color">@color/colorDarkMode</color>
     <color name="error">#D32F2F</color>
+    <color name="colorOrder">#1ec619</color>
 </resources>

@@ -5,25 +5,34 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.customerangkot.data.api.dto.DataTrayekJSON
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.domain.entity.LatLng
 import com.example.customerangkot.domain.entity.TrayekItem
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
 import kotlinx.coroutines.launch
 
 class AngkotViewModel(
     private val getUserLocationUseCase: GetUserLocationUseCase,
-    private val getClosestTrayekUseCase: GetClosestTrayekUseCase
+    private val getClosestTrayekUseCase: GetClosestTrayekUseCase,
+    private val getAngkotByTrayekIdUseCase: GetAngkotByTrayekIdUseCase
 ) : ViewModel() {
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
     val locationState: LiveData<ResultState<LatLng>> get() = _locationState
 
-    private val _trayekState = MutableLiveData<ResultState<List<TrayekItem>>>()
-    val trayekState: LiveData<ResultState<List<TrayekItem>>> get() = _trayekState
+//    private val _trayekState = MutableLiveData<ResultState<List<TrayekItem>>>()
+//    val trayekState: LiveData<ResultState<List<TrayekItem>>> get() = _trayekState
 
-    private val _selectedAngkotIds = MutableLiveData<List<Int>?>()
-    val selectedAngkotIds: LiveData<List<Int>?> get() = _selectedAngkotIds
+//    private val _selectedAngkotIds = MutableLiveData<List<Int>?>()
+//    val selectedAngkotIds: LiveData<List<Int>?> get() = _selectedAngkotIds
+
+    private val _selectedTrayekId = MutableLiveData<Int?>()
+    val selectedTrayekId: LiveData<Int?> get() = _selectedTrayekId
+
+    private val _angkotState = MutableLiveData<ResultState<List<DataTrayekJSON>>>()
+    val angkotState: LiveData<ResultState<List<DataTrayekJSON>>> get() = _angkotState
 
     private val _angkotPositions = MutableLiveData<Map<Int, LatLng>>()
     val angkotPositions: LiveData<Map<Int, LatLng>> get() = _angkotPositions
@@ -41,19 +50,38 @@ class AngkotViewModel(
         }
     }
 
-    fun getClosestTrayek(lat: Double, lng: Double) {
-        _trayekState.value = ResultState.Loading
+//    fun getClosestTrayek(lat: Double, lng: Double) {
+//        _trayekState.value = ResultState.Loading
+//        viewModelScope.launch {
+//            val result = getClosestTrayekUseCase.getUniqueTrayeks(lat, lng)
+//            _trayekState.value = when {
+//                result.isSuccess -> ResultState.Success(result.getOrThrow())
+//                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
+//            }
+//        }
+//    }
+
+//    fun setSelectedAngkotIds(angkotIds: List<Int>?) {
+//        _selectedAngkotIds.value = angkotIds
+//    }
+
+    fun getAngkotByTrayekId(lat: Double, lng: Double, trayekId: Int) {
+        _angkotState.value = ResultState.Loading
         viewModelScope.launch {
-            val result = getClosestTrayekUseCase.getUniqueTrayeks(lat, lng)
-            _trayekState.value = when {
+            val result = getAngkotByTrayekIdUseCase(lat, lng, trayekId)
+            _angkotState.value = when {
                 result.isSuccess -> ResultState.Success(result.getOrThrow())
-                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
+                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil data angkot")
             }
         }
     }
 
-    fun setSelectedAngkotIds(angkotIds: List<Int>?) {
-        _selectedAngkotIds.value = angkotIds
+    fun setSelectedTrayek(trayekId: Int?) {
+        _selectedTrayekId.value = trayekId
+    }
+
+    fun clearAngkotState() {
+        _angkotState.value = ResultState.Success(emptyList())
     }
 
     fun updateAngkotPosition(angkotId: Int, lat: Double, lng: Double, platNomor: String? = null) {

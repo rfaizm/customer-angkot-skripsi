@@ -13,7 +13,7 @@
 
         <TextView
             android:id="@+id/text_trayek"
-            style="@style/textBold"
+            style="@style/textMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Pilih Trayek"
@@ -30,7 +30,7 @@
 
         <TextView
             android:id="@+id/text_position_angkot"
-            style="@style/textBold"
+            style="@style/textMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"

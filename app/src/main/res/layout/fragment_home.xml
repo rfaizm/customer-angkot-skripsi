@@ -186,7 +186,7 @@
 
         <TextView
             android:id="@+id/text_posisi"
-            style="@style/textReguler"
+            style="@style/textBold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"

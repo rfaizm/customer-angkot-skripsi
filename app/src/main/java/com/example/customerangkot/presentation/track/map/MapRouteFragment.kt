@@ -11,6 +11,7 @@ import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.customerangkot.R
+import com.example.customerangkot.data.api.dto.StepsItem
 import com.example.customerangkot.data.api.dto.TrayeksItem
 import com.example.customerangkot.databinding.FragmentMapRouteBinding
 import com.example.customerangkot.di.ResultState
@@ -30,6 +31,10 @@ import kotlin.math.abs
 class MapRouteFragment : Fragment(), LocationPermissionListener {
     private var _binding: FragmentMapRouteBinding? = null
     private val binding get() = _binding!!
+    // Menyimpan lokasi user untuk dikirim ke ChooseLocationMapsFragment
+    private var userLat: Double? = null
+    private var userLong: Double? = null
+    // Menyimpan lokasi awal dan tujuan
     private var startLong: Double? = null
     private var startLat: Double? = null
     private var destinationLong: Double? = null
@@ -38,6 +43,9 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
     private var isLocationInitialized: Boolean = false
     private var startPlaceName: String? = null
     private var destinationPlaceName: String? = null
+    private var currentRouteList: List<RouteAngkot> = emptyList()
+
+
 
     private val trackAngkotViewModel by viewModels<TrackAngkotViewModel> {
         ViewModelFactory.getInstance(requireContext())
@@ -78,20 +86,24 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
             }
         }
 
+
+
         loadMaps()
         setupRecycleView()
-        setupFAB()
         setupSearchView()
         setupRadioGroup()
         setupLocationResultListener()
+        setupOrderButton()
 
         observeLocationState()
         observePlaceNameState()
         observeRoutesState()
+
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+
         outState.putString("start_place_name", startPlaceName)
         outState.putString("destination_place_name", destinationPlaceName)
         outState.putDouble("start_lat", startLat ?: Double.NaN)
@@ -100,6 +112,48 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
         outState.putDouble("destination_long", destinationLong ?: Double.NaN)
         outState.putString("route_type", routeType)
         outState.putBoolean("is_location_initialized", isLocationInitialized)
+    }
+
+    private fun setupOrderButton() {
+        binding.buttonOrder.setOnClickListener {
+
+            // ===============================
+            // [GUARD] Tidak ada rute
+            // ===============================
+            if (currentRouteList.isEmpty()) return@setOnClickListener
+
+            // ===============================
+            // [RULE] Selalu ambil rute pertama
+            // ===============================
+            val firstRoute = currentRouteList.first()
+
+            // ===============================
+            // [RULE] Jika bukan angkot terintegrasi
+            // ===============================
+            if (!firstRoute.isIntegrated) {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Informasi")
+                    .setMessage("Transportasi umum ini belum terintegrasi dengan sistem.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            // ===============================
+            // [KONFIRMASI] Fokus ke aksi pemesanan
+            // ===============================
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Konfirmasi Pemesanan")
+                .setMessage(
+                    "Anda akan memesan angkot:\n${firstRoute.namaTrayek}"
+                )
+                .setPositiveButton("Lanjutkan") { _, _ ->
+                    navigateToChooseAngkot(firstRoute)
+                }
+                .setNegativeButton("Batal", null)
+                .show()
+        }
+
     }
 
     private fun setupRadioGroup() {
@@ -111,6 +165,8 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 else -> "best_route"
             }
             Log.d("MapRouteFragment", "Route type selected: $routeType")
+            // Jika rute sudah ada, langsung refresh
+            tryFetchRoutes()
         }
     }
 
@@ -122,6 +178,8 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
             startLong = longitude
             Log.d("MapRouteFragment", "Start location received: Lat=$latitude, Long=$longitude")
             trackAngkotViewModel.getPlaceName(latitude, longitude, "start")
+            // Auto trigger rute jika start sudah ada
+            tryFetchRoutes()
         }
 
         setFragmentResultListener("location_result:destination") { _, bundle ->
@@ -131,6 +189,32 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
             destinationLong = longitude
             Log.d("MapRouteFragment", "Destination location received: Lat=$latitude, Long=$longitude")
             trackAngkotViewModel.getPlaceName(latitude, longitude, "destination")
+            // Auto trigger rute jika destination sudah ada
+            tryFetchRoutes()
+        }
+    }
+
+    private fun tryFetchRoutes() {
+        if (
+            startLat != null &&
+            startLong != null &&
+            destinationLat != null &&
+            destinationLong != null
+        ) {
+            Log.d(
+                "MapRouteFragment",
+                "Auto trigger getRoutes: start=($startLat,$startLong), destination=($destinationLat,$destinationLong), type=$routeType"
+            )
+
+            trackAngkotViewModel.getRoutes(
+                startLat!!,
+                startLong!!,
+                destinationLat!!,
+                destinationLong!!,
+                routeType
+            )
+
+
         }
     }
 
@@ -141,6 +225,11 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 is ResultState.Success -> {
                     val latLng = state.data
                     Log.d("MapRouteFragment", "Lokasi berhasil: Lat=${latLng.latitude}, Lng=${latLng.longitude}")
+
+                    // Simpan lokasi user agar bisa dikirim ke ChooseLocationMapsFragment
+                    userLat = latLng.latitude
+                    userLong = latLng.longitude
+
                     if (!isLocationInitialized && startLat == null && startLong == null) {
                         startLat = latLng.latitude
                         startLong = latLng.longitude
@@ -206,20 +295,61 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
     private fun observeRoutesState() {
         trackAngkotViewModel.routesState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is ResultState.Loading -> showLoading(true)
+                is ResultState.Loading -> {
+
+                    binding.buttonOrder.isEnabled = false
+
+                    showLoading(true)
+                }
                 is ResultState.Success -> {
                     val routeData = state.data.data?.firstOrNull()
+
+                    // Ambil departure location dari rute pertama
+
+
                     if (routeData != null) {
+                        val departureLocation =
+                            routeData.trayeks
+                                ?.firstOrNull()
+                                ?.departure
+                                ?: "lokasi keberangkatan"
+
+                        binding.checkBoxPosition.apply {
+                            visibility = View.VISIBLE
+                            text = "Pastikan anda sudah di $departureLocation"
+                            isChecked = false
+                        }
+
                         val mapsFragment = childFragmentManager.findFragmentById(R.id.tracker_map) as? MapsFragment
                         mapsFragment?.displayRoutePolylines(routeData.steps?.filterNotNull() ?: emptyList())
                         val trayeks = routeData.trayeks?.filterNotNull() ?: emptyList()
+
+                        currentRouteList = trayeks.map {
+                            RouteAngkot(
+                                trayekId = it.id ?: 0,
+                                namaTrayek = it.name ?: "Trayek Tidak Dikenal",
+                                predictETA = it.duration ?: "N/A",
+                                price = it.price?.toDouble() ?: 0.0,
+                                polyline = it.polyline.toString(),
+                                startLat = it.startLat ?: 0.0,
+                                startLong = it.startLong ?: 0.0,
+                                destinationLat = it.destinationLat ?: 0.0,
+                                destinationLong = it.destinationLong ?: 0.0,
+                                isIntegrated = (it.id ?: 0) > 0,
+                                color = it.color ?: "#FFFFFF"
+                            )
+                        }
                         updateRouteAdapter(trayeks)
+                        binding.checkBoxPosition.setOnCheckedChangeListener { _, isChecked ->
+                            binding.buttonOrder.isEnabled = isChecked
+                        }
                     } else {
                         Toast.makeText(requireContext(), "Tidak ada rute yang ditemukan", Toast.LENGTH_SHORT).show()
                     }
                     showLoading(false)
                 }
                 is ResultState.Error -> {
+                    binding.buttonOrder.isEnabled = false
                     showLoading(false)
                     Log.e("MapRouteFragment", "Error mendapatkan rute: ${state.error}")
                     Toast.makeText(requireContext(), "Error rute: ${state.error}", Toast.LENGTH_SHORT).show()
@@ -240,47 +370,13 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 startLong = it.startLong ?: 0.0,
                 destinationLat = it.destinationLat ?: 0.0,
                 destinationLong = it.destinationLong ?: 0.0,
-                isIntegrated = (it.id ?: 0) > 0  // [BARU]
+                isIntegrated = (it.id ?: 0) > 0,
+                color = it.color ?: "#FFFFFF"
             )
         }
 
         val routeAdapter = RouteAdapter(routeList) { selectedRoute ->
-            if (selectedRoute.isIntegrated) {
-                // [LAMA] Navigasi ke ChooseAngkotFragment
-                val trayekItem = trayeks.find { it.id == selectedRoute.trayekId }
-                val departureLocation = trayekItem?.departure ?: "lokasi tujuan"
-
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Konfirmasi Posisi")
-                    .setMessage("Pastikan anda sudah di posisi $departureLocation")
-                    .setPositiveButton("Ya") { _, _ ->
-                        val bundle = Bundle().apply {
-                            putInt("trayek_id", selectedRoute.trayekId)
-                            putDouble("start_lat", selectedRoute.startLat)
-                            putDouble("start_long", selectedRoute.startLong)
-                            putDouble("destination_lat", selectedRoute.destinationLat)
-                            putDouble("destination_long", selectedRoute.destinationLong)
-                            putDouble("price", selectedRoute.price)
-                            putString("polyline", selectedRoute.polyline)
-                        }
-                        val chooseAngkotFragment = ChooseAngkotFragment.newInstance().apply {
-                            arguments = bundle
-                        }
-                        parentFragmentManager.beginTransaction()
-                            .replace(R.id.container, chooseAngkotFragment)
-                            .addToBackStack("ChooseAngkotFragment")
-                            .commit()
-                    }
-                    .setNegativeButton("Batal", null)
-                    .show()
-            } else {
-                // [BARU] Dialog: Belum terintegrasi
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Informasi")
-                    .setMessage("Transportasi umum tersebut belum terintegrasi dengan sistem.")
-                    .setPositiveButton("OK", null)
-                    .show()
-            }
+            // ISI JIKA PERLU UNTUK ACTION DI ITEM ROUTEADAPTER
         }
 
         binding.rvTrackRoute.apply {
@@ -288,6 +384,31 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
             adapter = routeAdapter
         }
     }
+
+    // ===================================
+    // Navigasi ke halaman berikutnya
+    // ===================================
+    private fun navigateToChooseAngkot(route: RouteAngkot) {
+        val bundle = Bundle().apply {
+            putInt("trayek_id", route.trayekId)
+            putDouble("start_lat", route.startLat)
+            putDouble("start_long", route.startLong)
+            putDouble("destination_lat", route.destinationLat)
+            putDouble("destination_long", route.destinationLong)
+            putDouble("price", route.price)
+            putString("polyline", route.polyline)
+        }
+
+        val fragment = ChooseAngkotFragment.newInstance().apply {
+            arguments = bundle
+        }
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.container, fragment)
+            .addToBackStack("ChooseAngkotFragment")
+            .commit()
+    }
+
 
     private fun setupSearchView() {
         binding.btnMapStart.setOnClickListener {
@@ -311,7 +432,11 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
     }
 
     private fun navigateToMapsFragment(locationType: String) {
-        val mapsFragment = ChooseLocationMapsFragment.newInstance(locationType)
+        val mapsFragment = ChooseLocationMapsFragment.newInstance(
+            locationType = locationType,
+            initialLat = userLat,
+            initialLong = userLong
+            )
         parentFragmentManager.beginTransaction()
             .replace(R.id.container, mapsFragment)
             .addToBackStack(null)
@@ -342,27 +467,14 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-    private fun setupFAB() {
-        binding.fabReady.setOnClickListener {
-            Log.d("MapRouteFragment", "Start: Lat=$startLat, Long=$startLong")
-            Log.d("MapRouteFragment", "Destination: Lat=$destinationLat, Long=$destinationLong")
-            Log.d("MapRouteFragment", "Route type: $routeType")
-            if (startLat != null && startLong != null && destinationLat != null && destinationLong != null) {
-                trackAngkotViewModel.getRoutes(
-                    startLat!!, startLong!!, destinationLat!!, destinationLong!!, routeType
-                )
-            } else {
-                Toast.makeText(requireContext(), "Pilih lokasi awal dan tujuan terlebih dahulu", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
     override fun onLocationPermissionGranted() {
         if (!isLocationInitialized) {
             Log.d("MapRouteFragment", "Izin lokasi diberikan")
             trackAngkotViewModel.getUserLocation()
         }
     }
+
+
 
     private fun showLoading(isLoading: Boolean) {
         binding.progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE

@@ -68,7 +68,7 @@ class ViewModelFactory private constructor(
                 HomeViewModel(getUserLocationUseCase, getClosestTrayekUseCase, getSaldoUseCase) as T
             }
             modelClass.isAssignableFrom(AngkotViewModel::class.java) -> {
-                AngkotViewModel(getUserLocationUseCase, getClosestTrayekUseCase) as T
+                AngkotViewModel(getUserLocationUseCase, getClosestTrayekUseCase, getAngkotByTrayekIdUseCase) as T
             }
             modelClass.isAssignableFrom(DetailInformationTrayekViewModel::class.java) -> {
                 DetailInformationTrayekViewModel(getAngkotByTrayekIdUseCase) as T
