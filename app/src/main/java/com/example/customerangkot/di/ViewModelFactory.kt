@@ -49,7 +49,8 @@ class ViewModelFactory private constructor(
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val getETAUseCase: GetETAUseCase, // [Baru]
     private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
-    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase
+    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase,
+//    private val getCheckActiveOrder: GetCheckActiveOrder
 ) : ViewModelProvider.NewInstanceFactory() {
 
     @Suppress("UNCHECKED_CAST")
@@ -85,7 +86,7 @@ class ViewModelFactory private constructor(
                     getETAUseCase,
                     getSaldoUseCase,
                     checkPusherConnectionUseCase,
-                    getDriverIdWithAngkotIdUseCase
+                    getDriverIdWithAngkotIdUseCase,
                 ) as T
             }
             modelClass.isAssignableFrom(TopUpViewModel::class.java) -> {
@@ -120,7 +121,8 @@ class ViewModelFactory private constructor(
                     Injection.provideCancelOrderUseCase(context),
                     Injection.provideGetETAUseCase(context), // [Baru]
                     Injection.provideCheckPusherConnectionUseCase(),
-                    Injection.provideGetDriverIdWithAngkotIdUseCase(context)
+                    Injection.provideGetDriverIdWithAngkotIdUseCase(context),
+//                    Injection.proviceGetCheckActiveOrderUseCase(context)
                 )
             }.also { instance = it }
     }

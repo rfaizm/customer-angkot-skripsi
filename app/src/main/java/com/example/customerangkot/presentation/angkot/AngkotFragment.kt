@@ -97,7 +97,7 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
             override fun onQueryTextSubmit(query: String?) = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                trayekAdapter?.filter(newText) // ✅ aman
+                trayekAdapter?.filter(newText) //  aman
                 return true
             }
         })
@@ -149,23 +149,6 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-//    private fun setupSearchView() {
-//        binding.searchView.apply {
-//            setOnSearchClickListener {
-//                navigateToTrackActivity()
-//            }
-//            setOnQueryTextFocusChangeListener { _, hasFocus ->
-//                if (hasFocus) {
-//                    navigateToTrackActivity()
-//                }
-//            }
-//        }
-//    }
-
-//    private fun navigateToTrackActivity() {
-//        val intent = Intent(requireActivity(), TrackAngkotActivity::class.java)
-//        startActivity(intent)
-//    }
 
     private fun loadMaps() {
         val layoutPositionMaps = binding.root.findViewById<View>(R.id.map_detail_trayek)
@@ -270,7 +253,7 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
             }
         }
 
-        angkotViewModel.angkotState.observe(this) { state ->
+        angkotViewModel.angkotState.observe(viewLifecycleOwner) { state ->
 
             if (angkotViewModel.selectedTrayekId.value == null) {
                 binding.rvDetailAngkot.adapter = null
@@ -377,72 +360,6 @@ class AngkotFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-//    private fun observeTrayekState() {
-//        angkotViewModel.trayekState.observe(viewLifecycleOwner) { state ->
-//            when (state) {
-//                is ResultState.Loading -> {
-//                    showLoading(true)
-//                }
-//                is ResultState.Success -> {
-//                    showLoading(false)
-//                    val trayekList = state.data
-//                    val mapsFragment = childFragmentManager.findFragmentById(R.id.map_detail_trayek) as? MapsFragment
-//                    val trayekAdapter = TrayekAdapter(trayekList) { selectedTrayek ->
-//                        if (selectedTrayek != null) {
-//                            angkotViewModel.setSelectedAngkotIds(selectedTrayek.angkotIds)
-//                            mapsFragment?.clearAngkotMarkers()
-//                            val locations = mutableListOf<LatLng>()
-//                            selectedTrayek.angkotIds.forEachIndexed { index, angkotId ->
-//                                if (index < selectedTrayek.latitudes.size &&
-//                                    index < selectedTrayek.longitudes.size &&
-//                                    index < selectedTrayek.platNomors.size) {
-//                                    val lat = selectedTrayek.latitudes[index]
-//                                    val lng = selectedTrayek.longitudes[index]
-//                                    val platNomor = selectedTrayek.platNomors[index]
-//                                    if (lat != 0.0 && lng != 0.0) {
-//                                        mapsFragment?.updateAngkotMarker(angkotId, lat, lng, platNomor)
-//                                        locations.add(LatLng(lat, lng))
-//                                    }
-//                                }
-//                            }
-//                            subscribeToAngkotChannels(selectedTrayek.angkotIds)
-//                            // Baris tambahan: Animasi kamera ke semua marker
-//                            if (locations.isNotEmpty()) {
-//                                mapsFragment?.animateCameraToBounds(locations)
-//                                Log.d("AngkotFragment", "Animating camera to show ${locations.size} markers for trayek ${selectedTrayek.name}")
-//                            } else if (userLatitude != null && userLongitude != null) {
-//                                mapsFragment?.animateCameraToLocation(userLatitude!!, userLongitude!!)
-//                                Log.d("AngkotFragment", "No markers, animating camera to user location")
-//                            }
-//                        } else {
-//                            angkotViewModel.setSelectedAngkotIds(null)
-//                            mapsFragment?.clearAngkotMarkers()
-//                            subscribedChannels.forEach { pusher.unsubscribe(it.name) }
-//                            subscribedChannels.clear()
-//                            // Baris tambahan: Kembalikan kamera ke lokasi pengguna saat deselect
-//                            if (userLatitude != null && userLongitude != null) {
-//                                mapsFragment?.animateCameraToLocation(userLatitude!!, userLongitude!!)
-//                                Log.d("AngkotFragment", "Deselected trayek, animated camera to user location")
-//                            }
-//                            Log.d("AngkotFragment", "Deselected trayek, cleared markers and unsubscribed channels")
-//                        }
-//                    }
-//                    binding.rvTrayek.apply {
-//                        layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-//                        adapter = trayekAdapter
-//                        val spacing = resources.getDimensionPixelSize(R.dimen.spacing_horizontal)
-//                        addItemDecoration(HorizontalSpaceItemDecoration(spacing))
-//                    }
-//
-//                }
-//                is ResultState.Error -> {
-//                    showLoading(false)
-//                    Log.d("AngkotFragment", "Error mendapatkan trayek: ${state.error}")
-//                    Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
-//                }
-//            }
-//        }
-//    }
 
     private fun observeAngkotPositions() {
         Log.d("AngkotFragment", "Observing angkotPositions")

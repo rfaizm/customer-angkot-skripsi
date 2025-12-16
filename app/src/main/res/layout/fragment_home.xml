@@ -100,7 +100,7 @@
             android:id="@+id/card_view_order_active"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:visibility="gone"
+
             app:cardCornerRadius="8dp"
             app:cardElevation="8dp"
             app:cardUseCompatPadding="true"

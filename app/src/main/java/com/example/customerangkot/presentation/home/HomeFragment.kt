@@ -72,7 +72,6 @@ class HomeFragment : Fragment(), LocationPermissionListener {
         initPusher()
         attachMaps()
         goToTopup()
-        setupButton()
         setupUsername()
         setupSearchView()
 
@@ -218,17 +217,6 @@ class HomeFragment : Fragment(), LocationPermissionListener {
     }
 
 
-
-    private fun setupButton() {
-//        binding.logoTopup.setOnClickListener {
-//            val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
-//                userLatitude?.let { putExtra("LAT_USER", it) }
-//                userLongitude?.let { putExtra("LONG_USER", it) }
-//            }
-//            startActivity(intent)
-//        }
-    }
-
     private fun attachMaps() {
         val layoutPositionAngkot = binding.root.findViewById<LayoutPositionAngkot>(R.id.position_angkot)
 
@@ -334,57 +322,6 @@ class HomeFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-//    private fun observeAllTrayekState() {
-//        homeViewModel.allTrayekState.observe(viewLifecycleOwner) { state ->
-//            when (state) {
-//                is ResultState.Loading -> {
-//                    showLoading(true)
-//                }
-//                is ResultState.Success -> {
-//                    // Baris 222-237: Filter trayek unik berdasarkan trayekId
-//                    val uniqueTrayeks = state.data
-//                        .filter { it.trayek?.id != null } // Pastikan trayekId tidak null
-//                        .groupBy { it.trayek!!.id } // Kelompokkan berdasarkan trayekId
-//                        .map { (_, items) ->
-//                            val firstItem = items.first() // Ambil item pertama untuk setiap trayekId
-//                            InformationItem.TrayekInformation(
-//                                name = firstItem.trayek?.name ?: "",
-//                                description = firstItem.trayek?.description ?: "",
-//                                trayekId = firstItem.trayek?.id ?: 0,
-//                                imageUrl = firstItem.trayek?.imageUrl
-//                            )
-//                        }
-//                    Log.d("HomeFragment", "Unique trayeks displayed: ${uniqueTrayeks.size} items")
-//
-//                    val informasiAdapter = InformationAdapter(uniqueTrayeks) { selectedItem ->
-//                        val intent = Intent(requireContext(), DetailInformationTrayekActivity::class.java).apply {
-//                            when (selectedItem) {
-//                                is InformationItem.AngkotInformation -> {
-//                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
-//                                }
-//                                is InformationItem.TrayekInformation -> {
-//                                    putExtra("ID_TRAYEK", selectedItem.trayekId)
-//                                }
-//                            }
-//                            userLatitude?.let { putExtra("LAT_USER", it) }
-//                            userLongitude?.let { putExtra("LONG_USER", it) }
-//                        }
-//                        startActivity(intent)
-//                    }
-//                    binding.informasiAngkot.apply {
-//                        layoutManager = LinearLayoutManager(context)
-//                        adapter = informasiAdapter
-//                    }
-//                    showLoading(false)
-//                }
-//                is ResultState.Error -> {
-//                    showLoading(false)
-//                    Log.d("HomeFragment", "Error mendapatkan trayek: ${state.error}")
-//                    Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
-//                }
-//            }
-//        }
-//    }
 
     private fun observeGetSaldo() {
         homeViewModel.getSaldo.observe(viewLifecycleOwner) { state ->

@@ -17,7 +17,8 @@ class CreateOrderUseCase(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String
+        methodPayment: String,
+        polyline: String
     ): Result<OrderCreatedResponse> {
         return try {
             val token = userPreference.getAuthToken()
@@ -32,7 +33,8 @@ class CreateOrderUseCase(
                 destinationLong = destinationLong,
                 numberOfPassengers = numberOfPassengers,
                 totalPrice = totalPrice,
-                methodPayment = methodPayment
+                methodPayment = methodPayment,
+                polyline = polyline
             )
             Result.success(response)
         } catch (e: Exception) {

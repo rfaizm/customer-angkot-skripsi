@@ -1,5 +1,6 @@
 package com.example.customerangkot.data.api
 
+import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.FindClosestResponse
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
@@ -102,7 +103,8 @@ interface ApiService {
         @Field("destination_point_long") destinationLong : Double,
         @Field("number_of_passengers") numberOfPassengers : Int,
         @Field("price") totalPrice : Int,
-        @Field("payment_method") paymentMethod : String
+        @Field("payment_method") paymentMethod : String,
+        @Field("polyline") polyline : String
     ) : Response<OrderCreatedResponse>
 
     @FormUrlEncoded
@@ -150,4 +152,10 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Field("angkot_id") angkotId : Int,
     ) : Response<GetDriverResponse>
+
+
+    @GET("orders/check-active")
+    suspend fun getCheckActiveOrder(
+        @Header("Authorization") token: String
+    ): Response<CheckOrderActiveResponse>
 }

@@ -2,6 +2,7 @@ package com.example.customerangkot.presentation.track.waitingangkot
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -46,7 +47,7 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
     private var orderId: Int? = null
     private var polyline: String = ""
     private var methodPayment: String = "tunai"
-
+    private var isFromActiveOrder = false
     private var platNomor: String? = null  // [BARU] Simpan plat nomor
 
     private lateinit var pusher: Pusher
@@ -75,7 +76,8 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
             totalPrice = it.getDouble("total_price", 0.0)
             polyline = it.getString("polyline", "")
             methodPayment = it.getString("method_payment", "tunai")
-            Log.d(TAG, "Data diterima: driverId=$driverId, angkotId=$angkotId, platNomor=$platNomor")
+            isFromActiveOrder = it.getBoolean("from_active_order", false)
+            Log.d(TAG, "Data diterima: driverId=$driverId, angkotId=$angkotId, platNomor=$platNomor, polyline=$polyline")
         }
 
         return binding.root
@@ -90,22 +92,32 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         observeCancelOrderState()
         observeETAState()
 
-        if (driverId == 0 || numberOfPassengers <= 0 || totalPrice <= 0.0) {
-            Toast.makeText(requireContext(), "Data pesanan tidak valid", Toast.LENGTH_LONG).show()
-            return
+        if (!isFromActiveOrder) {
+            if (driverId == 0 || numberOfPassengers <= 0 || totalPrice <= 0.0) {
+                Toast.makeText(requireContext(), "Data pesanan tidak valid", Toast.LENGTH_LONG).show()
+                return
+            }
         }
 
+        val polylineString = Base64.encodeToString(polyline.toByteArray(), Base64.NO_WRAP)
+
         // [FIX] Gunakan driverId untuk create order
-        trackAngkotViewModel.createOrder(
-            driverId = driverId,
-            startLat = startLat,
-            startLong = startLong,
-            destinationLat = destinationLat,
-            destinationLong = destinationLong,
-            numberOfPassengers = numberOfPassengers,
-            totalPrice = totalPrice,
-            methodPayment = methodPayment
-        )
+        if (!isFromActiveOrder) {
+            trackAngkotViewModel.createOrder(
+                driverId = driverId,
+                startLat = startLat,
+                startLong = startLong,
+                destinationLat = destinationLat,
+                destinationLong = destinationLong,
+                numberOfPassengers = numberOfPassengers,
+                totalPrice = totalPrice,
+                methodPayment = methodPayment,
+                polyline = polylineString
+            )
+        } else {
+//            trackAngkotViewModel.checkActiveOrder()
+        }
+
 
         cancelAction()
 
@@ -160,7 +172,6 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                         val mapsFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot) as? MapsFragment
                         // [FIX] Kirim platNomor jika ada
                         mapsFragment?.updateAngkotMarker(id, lat, lng, platNomor)
-                        mapsFragment?.animateCameraToLocation(lat, lng)
 
                         trackAngkotViewModel.getETA(
                             driverLat = lat,
@@ -329,6 +340,32 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         }
     }
 
+    private fun observeCheckOrderActive() {
+        trackAngkotViewModel.activeOrderState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is ResultState.Loading -> {
+                    showLoading(true)
+                    binding.layoutCancelAngkotWait.hideCancelButton()
+                }
+                is ResultState.Success -> {
+                    val orderActive = state.data
+
+                    orderId = orderActive.data?.orderId
+
+                    orderId?.let {
+                        subscribeToOrderStatus(it)
+                    }
+
+                    orderActive.data?.driver?.name?.let { binding.layoutCancelAngkotWait.setFullName(it) }
+                    orderActive.data?.angkot?.platNomor?.let { binding.layoutCancelAngkotWait.setPlateNumber(it) }
+
+                }
+                is ResultState.Error -> {
+
+                }
+            }
+        }
+    }
     private fun loadMaps() {
         val existingFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot)
         if (existingFragment == null) {
@@ -383,7 +420,9 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
             numberOfPassengers: Int,
             totalPrice: Double,
             polyline: String = "",
-            methodPayment: String
+            methodPayment: String,
+            isFromActiveOrder : Boolean
+
         ): WaitingAngkotFragment {
             return WaitingAngkotFragment().apply {
                 arguments = Bundle().apply {
@@ -397,6 +436,7 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
                     putDouble("total_price", totalPrice)
                     putString("polyline", polyline)
                     putString("method_payment", methodPayment)
+                    putBoolean("from_active_order", isFromActiveOrder)
                 }
             }
         }

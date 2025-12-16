@@ -9,15 +9,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.example.customerangkot.R
 import com.example.customerangkot.databinding.FragmentChooseAngkotBinding
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.di.ViewModelFactory
+import com.example.customerangkot.presentation.adapter.ChooseAngkotAdapter
 import com.example.customerangkot.presentation.buttonsheet.SumPassengerSheet
 import com.example.customerangkot.presentation.maps.MapsFragment
 import com.example.customerangkot.presentation.track.TrackAngkotViewModel
 import com.example.customerangkot.utils.LocationPermissionListener
 import com.example.customerangkot.utils.OnMarkerClickListener
+import com.example.customerangkot.utils.Utils.haversineDistance
 import com.google.android.gms.maps.model.LatLng
 import com.pusher.client.Pusher
 import com.pusher.client.PusherOptions
@@ -33,7 +37,6 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
 
     private var _binding: FragmentChooseAngkotBinding? = null
     private val binding get() = _binding!!
-
     private var trayekId: Int = 0
     private var startLat: Double = 0.0
     private var startLong: Double = 0.0
@@ -42,8 +45,10 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
     private var price: Double = 0.0
     private var polyline: String = ""
     private var selectedAngkotId: Int? = null // Atribut baru untuk menyimpan angkotId yang dipilih
-
     private lateinit var pusher: Pusher
+    private var userLat: Double? = null
+    private var userLong: Double? = null
+    private lateinit var chooseAngkotAdapter: ChooseAngkotAdapter
     private val subscribedChannels = mutableSetOf<Channel>()
 
     private val trackAngkotViewModel by viewModels<TrackAngkotViewModel> {
@@ -80,6 +85,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
         observeLocationState()
         observeAngkotState()
         observeAngkotPositions()
+        setupRecyclerView()
 
         if (trayekId != 0 && startLat != 0.0 && startLong != 0.0 && price != 0.0 && polyline.isNotEmpty()) {
             trackAngkotViewModel.getAngkotByTrayekId(startLat, startLong, trayekId)
@@ -153,6 +159,39 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
         }
     }
 
+    private fun setupRecyclerView() {
+        chooseAngkotAdapter = ChooseAngkotAdapter(emptyList()) { angkot ->
+
+            selectedAngkotId = angkot.angkotId
+            binding.btnConfirmationAngkot.isEnabled = true
+
+            val angkotId = angkot.angkotId ?: return@ChooseAngkotAdapter
+
+            val mapsFragment =
+                childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
+
+            // [PERBAIKAN FINAL] Ambil posisi marker REAL-TIME
+            val markerPosition = mapsFragment?.getAngkotMarkerPosition(angkotId)
+
+            if (markerPosition != null) {
+                mapsFragment.animateCameraToLocation(
+                    markerPosition.latitude,
+                    markerPosition.longitude
+                )
+                Log.d(TAG, "Camera moved to REAL-TIME marker position $markerPosition")
+            } else {
+                Log.w(TAG, "Marker position not found for Angkot $angkotId")
+            }
+        }
+
+        binding.rvDetailAngkot.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = chooseAngkotAdapter
+        }
+    }
+
+
+
     private fun observeLocationState() {
         trackAngkotViewModel.locationState.observe(viewLifecycleOwner) { state ->
             when (state) {
@@ -161,6 +200,8 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                 }
                 is ResultState.Success -> {
                     val latLng = state.data
+                    userLat = latLng.latitude
+                    userLong = latLng.longitude
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
                     mapsFragment?.animateCameraToLocation(latLng.latitude, latLng.longitude)
                     showLoading(false)
@@ -183,6 +224,63 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                 is ResultState.Success -> {
                     val angkotList = state.data
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
+
+                    val trayekInfo = angkotList.firstOrNull()
+
+                    if (trayekInfo != null) {
+
+                        // [BARU] Set nama trayek
+                        binding.textTrayekName.text =
+                            trayekInfo.trayek?.name ?: "-"
+
+                        // [BARU] Load image trayek
+                        Glide.with(requireContext())
+                            .load(trayekInfo.trayek?.imageUrl)
+                            .placeholder(R.drawable.placeholder_image)
+                            .error(R.drawable.placeholder_image)
+                            .into(binding.imageTrayek)
+                    } else {
+                        binding.imageTrayek.visibility = View.GONE
+                        binding.textTrayekName.visibility = View.GONE
+                    }
+
+
+                    // [BARU] Tampilkan / sembunyikan empty state
+                    if (angkotList.isEmpty()) {
+                        binding.imageNoAngkotOnline.visibility = View.VISIBLE
+                        binding.textNoAngkotOnline.visibility = View.VISIBLE
+                        binding.rvDetailAngkot.visibility = View.GONE
+                    } else {
+                        binding.imageNoAngkotOnline.visibility = View.GONE
+                        binding.textNoAngkotOnline.visibility = View.GONE
+                        binding.rvDetailAngkot.visibility = View.VISIBLE
+
+                        // [BARU] Update list RecyclerView
+                        chooseAngkotAdapter = ChooseAngkotAdapter(angkotList) { angkot ->
+                            selectedAngkotId = angkot.angkotId
+                            binding.btnConfirmationAngkot.isEnabled = true
+
+                            val latestPosition =
+                                trackAngkotViewModel.angkotPositions.value?.get(angkot.angkotId)
+
+                            if (latestPosition != null) {
+                                mapsFragment?.animateCameraToLocation(
+                                    latestPosition.latitude,
+                                    latestPosition.longitude
+                                )
+                            } else {
+                                // fallback ke data awal (kalau realtime belum datang)
+                                mapsFragment?.animateCameraToLocation(
+                                    angkot.lat?.toDouble() ?: userLat!!,
+                                    angkot.long?.toDouble() ?: userLong!!
+                                )
+                            }
+
+                        }
+                        binding.rvDetailAngkot.adapter = chooseAngkotAdapter
+                    }
+
+
                     mapsFragment?.clearAngkotMarkers()
                     val locations = mutableListOf<LatLng>()
                     val angkotIds = mutableListOf<Int>()
@@ -227,13 +325,31 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
             positions.forEach { (angkotId, latLng) ->
                 mapsFragment?.updateAngkotMarker(angkotId, latLng.latitude, latLng.longitude)
+
+                val uLat = userLat
+                val uLng = userLong
+                if (uLat != null && uLng != null) {
+                    val distanceKm = haversineDistance(
+                        uLat,
+                        uLng,
+                        latLng.latitude,
+                        latLng.longitude
+                    )
+
+                    // [BARU] Update RecyclerView item
+                    chooseAngkotAdapter.updateDistance(
+                        angkotId,
+                        distanceKm
+                    )
+                }
+
                 Log.d(TAG, "Updating marker for Angkot $angkotId: Lat=${latLng.latitude}, Lng=${latLng.longitude}")
             }
         }
     }
 
     private fun setupFAB() {
-        binding.fabDone.setOnClickListener {
+        binding.btnConfirmationAngkot.setOnClickListener {
             if (selectedAngkotId == null) {
                 Toast.makeText(requireContext(), "Pastikan anda memilih angkot terlebih dahulu", Toast.LENGTH_SHORT).show()
             } else {
@@ -277,6 +393,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
 
     override fun onMarkerClicked(angkotId: Int) {
         selectedAngkotId = angkotId
+        binding.btnConfirmationAngkot.isEnabled = true
         if (isAdded) {
             Log.d(TAG, "Angkot ID $angkotId dipilih")
         }

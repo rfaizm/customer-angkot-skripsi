@@ -2,11 +2,13 @@ package com.example.customerangkot.data.datasource
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
+import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
 import com.example.customerangkot.data.preference.UserPreference
 import org.json.JSONObject
+import retrofit2.HttpException
 import retrofit2.Response
 
 class OrderDataSourceImpl(
@@ -25,7 +27,8 @@ class OrderDataSourceImpl(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String
+        methodPayment: String,
+        polyline: String
     ): OrderCreatedResponse {
         return try {
             Log.d(TAG, "Creating order: driverId=$driverId, totalPrice=$totalPrice, method=$methodPayment")
@@ -38,8 +41,10 @@ class OrderDataSourceImpl(
                 destinationLong,
                 numberOfPassengers,
                 totalPrice.toInt(),
-                methodPayment
+                methodPayment,
+                polyline
             )
+            Log.d(TAG, "Create order response: $polyline")
 
             if (response.isSuccessful) {
                 response.body() ?: throw Exception("Respons kosong dari server")
@@ -97,6 +102,24 @@ class OrderDataSourceImpl(
         try {
             Log.d(TAG, "Fetching ETA with startLat=$startLat, startLong=$startLong, endLat=$endLat, endLong=$endLong")
             return apiService.getEta("Bearer $token", startLat, startLong, endLat, endLong)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
+            throw e
+        }
+    }
+
+    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
+        try {
+            val response = apiService.getCheckActiveOrder("Bearer $token")
+
+            if (response.isSuccessful) {
+                Log.d(TAG, "getCheckOrderActive response: ${response.body()}")
+                return response.body() ?: throw Exception("Respons kosong dari server")
+            } else {
+                val errorBody = response.errorBody()?.string() ?: ""
+                Log.d(TAG, "Error response body: $errorBody")
+                throw HttpException(response)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching ETA: ${e.message}", e)
             throw e

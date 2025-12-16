@@ -1,5 +1,6 @@
 package com.example.customerangkot.domain.repository
 
+import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
@@ -14,7 +15,8 @@ interface OrderRepository {
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String // [Baru]
+        methodPayment: String,
+        polyline: String
     ): OrderCreatedResponse
 
     suspend fun cancelOrder(token: String, orderId: Int): OrderCancelResponse
@@ -25,4 +27,7 @@ interface OrderRepository {
         endLat: Double,
         endLong: Double
     ): GetETAResponse
+
+    suspend fun getCheckOrderActive(token: String) : CheckOrderActiveResponse
+
 }

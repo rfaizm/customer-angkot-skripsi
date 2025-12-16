@@ -12,51 +12,41 @@
         android:id="@+id/map_real_time_angkot"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
         app:layout_constraintBottom_toTopOf="@+id/guidelineHorizontalBottom2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tittle_choose_angkot">
+        app:layout_constraintTop_toTopOf="@+id/guidelineHorizontalText">
 
 
     </FrameLayout>
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guidelineHorizontalBottom"
-        android:layout_width="358dp"
-        android:layout_height="133dp"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintGuide_percent="0.89"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/tittle_choose_angkot"
         style="@style/textReguler"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textColor="@color/black"
+        android:layout_marginTop="4dp"
         android:text="Pilih Angkot"
+        android:textColor="@color/black"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/image_trayek" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_done"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_detail_angkot"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/colorPrimary"
-        android:clickable="true"
-        app:layout_constraintBottom_toTopOf="@+id/guidelineHorizontalBottom"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_confirmation_angkot"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/ic_check"
-        app:tint="@android:color/white" />
+        app:layout_constraintTop_toBottomOf="@+id/tittle_choose_angkot"
+        tools:listitem="@layout/item_choose_angkot" />
+
 
     <com.example.customerangkot.presentation.card.LayoutPrice
         android:id="@+id/layoutPrice"
@@ -64,10 +54,11 @@
         android:layout_height="0dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/guidelineHorizontalText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineHorizontalBottom" />
+        app:layout_constraintTop_toTopOf="parent" />
+
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineHorizontalBottom2"
@@ -75,7 +66,16 @@
         android:layout_height="133dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintGuide_percent="0.91"
+        app:layout_constraintGuide_percent="0.49"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineHorizontalText"
+        android:layout_width="358dp"
+        android:layout_height="133dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintGuide_percent="0.09"
         app:layout_constraintStart_toStartOf="parent" />
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -87,6 +87,75 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btn_confirmation_angkot"
+        style="@style/textButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_primary"
+        android:text="Lanjutkan"
+        android:enabled="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_no_angkot_online"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:src="@drawable/image_no_angkot_online"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/rv_detail_angkot"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tittle_choose_angkot"
+        app:layout_constraintVertical_bias="0.19999999" />
+
+    <TextView
+        android:id="@+id/text_no_angkot_online"
+        style="@style/textBold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Tidak ada angkot online"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_no_angkot_online" />
+
+    <ImageView
+        android:id="@+id/image_trayek"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.25"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map_real_time_angkot"
+        tools:src="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/text_trayek_name"
+        style="@style/textBold"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+
+        android:text="Cicaheum - Ledeng via Terminal Leuwipanjang - Setiabudi - Dago Atas"
+        android:textSize="16sp"
+
+        app:layout_constraintBottom_toTopOf="@+id/tittle_choose_angkot"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/image_trayek"
+        app:layout_constraintTop_toBottomOf="@+id/map_real_time_angkot" />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

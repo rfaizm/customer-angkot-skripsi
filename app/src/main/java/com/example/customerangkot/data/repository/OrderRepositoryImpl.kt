@@ -2,6 +2,7 @@ package com.example.customerangkot.data.repository
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
+import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
@@ -27,11 +28,12 @@ class OrderRepositoryImpl(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String // [Baru]
+        methodPayment: String,
+        polyline: String
     ): OrderCreatedResponse {
         try {
             Log.d(TAG, "Creating order with driverId=$driverId, totalPrice=$totalPrice, methodPayment=$methodPayment")
-            return orderDataSource.createOrder(token, driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment)
+            return orderDataSource.createOrder(token, driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment, polyline)
         } catch (e: Exception) {
             Log.e(TAG, "Error creating order: ${e.message}", e)
             throw e
@@ -59,6 +61,16 @@ class OrderRepositoryImpl(
             Log.d(TAG, "Fetching ETA with startLat=$startLat, startLong=$startLong, endLat=$endLat, endLong=$endLong")
             return orderDataSource.getETA(token, startLat, startLong, endLat, endLong)
         } catch (e: Exception) {
+            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
+            throw e
+        }
+    }
+
+    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
+        try {
+            Log.d(TAG, "Fetching Check Order Active")
+            return orderDataSource.getCheckOrderActive(token)
+        } catch (e : Exception) {
             Log.e(TAG, "Error fetching ETA: ${e.message}", e)
             throw e
         }

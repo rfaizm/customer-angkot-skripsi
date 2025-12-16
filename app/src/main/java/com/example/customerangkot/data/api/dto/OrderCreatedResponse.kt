@@ -47,5 +47,8 @@ data class OrderJSON(
 	val status: String? = null,
 
 	@field:SerializedName("payment_method")
-	val methodPayment: String? = null
+	val methodPayment: String? = null,
+
+    @field:SerializedName("polyline")
+	val polyline: String? = null
 )

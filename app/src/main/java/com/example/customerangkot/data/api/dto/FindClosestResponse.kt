@@ -1,6 +1,8 @@
 package com.example.customerangkot.data.api.dto
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
 data class FindClosestResponse(
 
@@ -14,6 +16,7 @@ data class FindClosestResponse(
 	val status: String? = null
 )
 
+@Parcelize
 data class TrayekJSON(
 
 	@field:SerializedName("name")
@@ -27,14 +30,14 @@ data class TrayekJSON(
 
 	@field:SerializedName("imageUrl")
 	val imageUrl: String? = null
-)
+) : Parcelable
 
+
+@Parcelize
 data class DataTrayekJSON(
-	@field:SerializedName("driver_id")
-	val driverId: Int? = null,
 
 	@field:SerializedName("distanceKm")
-	val distanceKm: Any? = null,
+	var distanceKm: Double? = null,
 
 	@field:SerializedName("trayek")
 	val trayek: TrayekJSON? = null,
@@ -50,4 +53,4 @@ data class DataTrayekJSON(
 
 	@field:SerializedName("long")
 	val long: String? = null
-)
+) : Parcelable

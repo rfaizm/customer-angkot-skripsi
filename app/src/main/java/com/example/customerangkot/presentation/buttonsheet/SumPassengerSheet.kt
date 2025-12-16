@@ -231,7 +231,8 @@ class SumPassengerSheet : BottomSheetDialogFragment() {
                 numberOfPassengers = data.numberOfPassengers,
                 totalPrice = data.totalPrice,
                 polyline = polyline,
-                methodPayment = data.methodPayment
+                methodPayment = data.methodPayment,
+                isFromActiveOrder = false
             )
 
             parentFragmentManager.beginTransaction()

@@ -214,6 +214,10 @@ class MapsFragment : Fragment() {
         Log.d("MapsFragment", "All angkot markers cleared")
     }
 
+    fun getAngkotMarkerPosition(angkotId: Int): LatLng? {
+        return angkotMarkers[angkotId]?.position
+    }
+
     fun displayRoutePolylines(steps: List<StepsItem>) {
         if (!isAdded || !isMapReady) {
             Log.d("MapsFragment", "displayRoutePolylines skipped: Fragment not attached or map not ready")

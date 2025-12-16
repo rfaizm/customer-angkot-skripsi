@@ -186,7 +186,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_price"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:background="@drawable/card_waiting_angkot"
         android:clipChildren="false"
         android:clipToPadding="false"
@@ -194,9 +194,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guidelineHorizontalForOrder"
-        app:layout_constraintVertical_bias="1.0">
+        app:layout_constraintStart_toStartOf="parent">
 
         <Button
             android:id="@+id/button_order"
@@ -240,14 +238,6 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.09" />
-
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guidelineHorizontalForOrder"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.89" />
 
 
     <!-- Progress Indicator -->

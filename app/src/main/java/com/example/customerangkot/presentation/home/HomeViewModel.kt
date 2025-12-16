@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.customerangkot.data.api.dto.DataTrayekJSON
 import com.example.customerangkot.data.api.dto.TopUpResponse
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.domain.entity.LatLng
@@ -18,16 +17,13 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     private val getUserLocationUseCase: GetUserLocationUseCase,
     private val getClosestTrayekUseCase: GetClosestTrayekUseCase,
-    private val getSaldoUseCase: GetSaldoUseCase
+    private val getSaldoUseCase: GetSaldoUseCase,
 ) : ViewModel() {
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
     val locationState: LiveData<ResultState<LatLng>> get() = _locationState
 
     private val _trayekState = MutableLiveData<ResultState<List<TrayekItem>>>()
     val trayekState: LiveData<ResultState<List<TrayekItem>>> get() = _trayekState
-
-//    private val _allTrayekState = MutableLiveData<ResultState<List<DataTrayekJSON>>>()
-//    val allTrayekState: LiveData<ResultState<List<DataTrayekJSON>>> get() = _allTrayekState
 
     private val _selectedAngkotIds = MutableLiveData<List<Int>?>()
     val selectedAngkotIds: LiveData<List<Int>?> get() = _selectedAngkotIds

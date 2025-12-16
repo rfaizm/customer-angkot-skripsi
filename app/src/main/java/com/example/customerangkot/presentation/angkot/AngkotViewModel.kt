@@ -22,12 +22,6 @@ class AngkotViewModel(
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
     val locationState: LiveData<ResultState<LatLng>> get() = _locationState
 
-//    private val _trayekState = MutableLiveData<ResultState<List<TrayekItem>>>()
-//    val trayekState: LiveData<ResultState<List<TrayekItem>>> get() = _trayekState
-
-//    private val _selectedAngkotIds = MutableLiveData<List<Int>?>()
-//    val selectedAngkotIds: LiveData<List<Int>?> get() = _selectedAngkotIds
-
     private val _selectedTrayekId = MutableLiveData<Int?>()
     val selectedTrayekId: LiveData<Int?> get() = _selectedTrayekId
 
@@ -50,20 +44,6 @@ class AngkotViewModel(
         }
     }
 
-//    fun getClosestTrayek(lat: Double, lng: Double) {
-//        _trayekState.value = ResultState.Loading
-//        viewModelScope.launch {
-//            val result = getClosestTrayekUseCase.getUniqueTrayeks(lat, lng)
-//            _trayekState.value = when {
-//                result.isSuccess -> ResultState.Success(result.getOrThrow())
-//                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil trayek terdekat")
-//            }
-//        }
-//    }
-
-//    fun setSelectedAngkotIds(angkotIds: List<Int>?) {
-//        _selectedAngkotIds.value = angkotIds
-//    }
 
     fun getAngkotByTrayekId(lat: Double, lng: Double, trayekId: Int) {
         _angkotState.value = ResultState.Loading

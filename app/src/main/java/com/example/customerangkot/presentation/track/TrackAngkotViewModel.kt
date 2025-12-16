@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.DataTrayekJSON
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
@@ -41,7 +42,7 @@ class TrackAngkotViewModel(
     private val getETAUseCase: GetETAUseCase,
     private val getSaldoUseCase: GetSaldoUseCase,
     private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
-    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase
+    private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase,
 ) : ViewModel() {
 
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
@@ -80,8 +81,8 @@ class TrackAngkotViewModel(
     private val _driverIdState = MutableLiveData<ResultState<GetDriverResponse>>()
 
     val driverIdState: LiveData<ResultState<GetDriverResponse>> get() = _driverIdState
-
-
+    private val _activeOrderState = MutableLiveData<ResultState<CheckOrderActiveResponse>>()
+    val activeOrderState: LiveData<ResultState<CheckOrderActiveResponse>> get() = _activeOrderState
     var lastLocationType: String? = null
 
     fun checkPusherConnection() {
@@ -182,11 +183,12 @@ class TrackAngkotViewModel(
         destinationLong: Double,
         numberOfPassengers: Int,
         totalPrice: Double,
-        methodPayment: String
+        methodPayment: String,
+        polyline: String
     ) {
         _orderState.value = ResultState.Loading
         viewModelScope.launch {
-            val result = createOrderUseCase(driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment)
+            val result = createOrderUseCase(driverId, startLat, startLong, destinationLat, destinationLong, numberOfPassengers, totalPrice, methodPayment, polyline)
             _orderState.value = when {
                 result.isSuccess -> {
                     Log.d("TrackAngkotViewModel", "Pesanan berhasil dibuat: orderId=${result.getOrThrow().data?.orderId}, methodPayment=$methodPayment")
@@ -271,4 +273,15 @@ class TrackAngkotViewModel(
         _orderStatus.value = status
         Log.d("TrackAngkotViewModel", "Order status updated: $status")
     }
+
+//    fun checkActiveOrder() {
+//        _activeOrderState.value = ResultState.Loading
+//        viewModelScope.launch {
+//            val result = getCheckActiveOrder()
+//            _activeOrderState.value = when {
+//                result.isSuccess -> ResultState.Success(result.getOrThrow())
+//                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal cek order aktif")
+//            }
+//        }
+//    }
 }

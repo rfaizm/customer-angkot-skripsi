@@ -148,4 +148,7 @@ object Injection {
     fun provideGetDriverIdWithAngkotIdUseCase(context: Context): GetDriverIdWithAngkotIdUseCase {
         return GetDriverIdWithAngkotIdUseCase(provideTrayekRepository(context), UserPreference.getInstance(context.dataStore))
     }
+//    fun proviceGetCheckActiveOrderUseCase(context: Context): GetCheckActiveOrder {
+//        return GetCheckActiveOrder(provideOrderRepository(context), UserPreference.getInstance(context.dataStore))
+//    }
 }
