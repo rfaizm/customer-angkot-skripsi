@@ -2,6 +2,7 @@ package com.example.customerangkot.data.datasource
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
+import com.example.customerangkot.data.api.dto.AngkotFilterResponse
 import com.example.customerangkot.data.api.dto.FindClosestResponse
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.google.gson.Gson
@@ -63,4 +64,36 @@ class TrayekDataSourceImpl(
             throw e
         }
     }
+
+    override suspend fun getAngkotFilterByTrayek(
+        token: String,
+        trayekId: Int,
+        lat: Double,
+        lng: Double,
+        polyline: String
+    ): AngkotFilterResponse {
+        try {
+            val response = apiService.getAngkotFilterById(
+                token = "Bearer $token",
+                trayekId = trayekId,
+                lat = lat,
+                long = lng,
+                polyline = polyline
+            )
+
+            if (response.isSuccessful) {
+                return response.body()
+                    ?: throw Exception("Response kosong dari server")
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val errorJson = Gson().fromJson(errorBody, JsonObject::class.java)
+                val message = errorJson.get("message")?.asString
+                    ?: "Terjadi kesalahan"
+                throw Exception(message)
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
 }

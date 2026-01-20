@@ -1,5 +1,6 @@
 package com.example.customerangkot.presentation.track.map
 
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -16,6 +17,7 @@ import com.example.customerangkot.data.api.dto.TrayeksItem
 import com.example.customerangkot.databinding.FragmentMapRouteBinding
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.di.ViewModelFactory
+import com.example.customerangkot.domain.entity.LatLng
 import com.example.customerangkot.presentation.adapter.RouteAdapter
 import com.example.customerangkot.presentation.angkot.AngkotViewModel
 import com.example.customerangkot.presentation.maps.ChooseLocationMapsFragment
@@ -25,6 +27,7 @@ import com.example.customerangkot.presentation.track.chooseangkot.ChooseAngkotFr
 import com.example.customerangkot.utils.LocationPermissionListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.example.customerangkot.utils.RouteAngkot
+import com.example.customerangkot.utils.Utils
 import java.text.NumberFormat
 import kotlin.math.abs
 
@@ -44,6 +47,9 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
     private var startPlaceName: String? = null
     private var destinationPlaceName: String? = null
     private var currentRouteList: List<RouteAngkot> = emptyList()
+
+    private var departureLong : Double? = null
+    private var departureLat : Double? = null
 
 
 
@@ -98,6 +104,7 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
         observeLocationState()
         observePlaceNameState()
         observeRoutesState()
+        observeCurrentLocationState()
 
     }
 
@@ -218,6 +225,32 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
         }
     }
 
+    private fun observeCurrentLocationState() {
+        trackAngkotViewModel.currentUserLocationState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is ResultState.Loading -> {
+                    // opsional: loading kecil
+                }
+
+                is ResultState.Success -> {
+                    val userLatLng = state.data
+                    validateUserDistanceToPickup(userLatLng)
+                }
+
+                is ResultState.Error -> {
+                    binding.checkBoxPosition.isChecked = false
+                    binding.buttonOrder.isEnabled = false
+                    Toast.makeText(
+                        requireContext(),
+                        state.error,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
+    }
+
     private fun observeLocationState() {
         trackAngkotViewModel.locationState.observe(viewLifecycleOwner) { state ->
             when (state) {
@@ -304,21 +337,47 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                 is ResultState.Success -> {
                     val routeData = state.data.data?.firstOrNull()
 
-                    // Ambil departure location dari rute pertama
+                    // Ambil departure_location pertama dari transit
+
 
 
                     if (routeData != null) {
-                        val departureLocation =
-                            routeData.trayeks
-                                ?.firstOrNull()
-                                ?.departure
-                                ?: "lokasi keberangkatan"
+                        val departurePoint = routeData.steps
+                            ?.firstOrNull { it?.transitDetails?.departureLocation != null }
+                            ?.transitDetails
+                            ?.departureLocation
 
-                        binding.checkBoxPosition.apply {
-                            visibility = View.VISIBLE
-                            text = "Pastikan anda sudah di $departureLocation"
-                            isChecked = false
+
+                        departureLong = departurePoint?.lng
+                        departureLat = departurePoint?.lat
+
+                        if (departurePoint == null) {
+                            binding.checkBoxPosition.visibility = View.GONE
+                            return@observe
                         }
+
+                        val departureLocation = routeData.steps
+                            .firstOrNull { it?.transitDetails?.departureLocation != null }
+                            ?.transitDetails
+                            ?.departureStop
+                            ?: "Titik jemput angkot"
+
+                        binding.checkBoxPosition.visibility = View.VISIBLE
+                        binding.checkBoxPosition.isChecked = false
+                        binding.buttonOrder.isEnabled = false
+
+                        binding.checkBoxPosition.text =
+                            "Saya berada di titik jemput: $departureLocation"
+
+                        binding.checkBoxPosition.setOnCheckedChangeListener { _, isChecked ->
+                            if (!isChecked) {
+                                binding.buttonOrder.isEnabled = false
+                                return@setOnCheckedChangeListener
+                            }
+
+                            trackAngkotViewModel.fetchCurrentUserLocation()
+                        }
+
 
                         val mapsFragment = childFragmentManager.findFragmentById(R.id.tracker_map) as? MapsFragment
                         mapsFragment?.displayRoutePolylines(routeData.steps?.filterNotNull() ?: emptyList())
@@ -340,9 +399,7 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
                             )
                         }
                         updateRouteAdapter(trayeks)
-                        binding.checkBoxPosition.setOnCheckedChangeListener { _, isChecked ->
-                            binding.buttonOrder.isEnabled = isChecked
-                        }
+
                     } else {
                         Toast.makeText(requireContext(), "Tidak ada rute yang ditemukan", Toast.LENGTH_SHORT).show()
                     }
@@ -384,6 +441,41 @@ class MapRouteFragment : Fragment(), LocationPermissionListener {
             adapter = routeAdapter
         }
     }
+
+    private fun validateUserDistanceToPickup(userLatLng: LatLng) {
+        val depLat = departureLat
+        val depLng = departureLong
+
+        if (depLat == null || depLng == null) {
+            binding.checkBoxPosition.isChecked = false
+            Toast.makeText(requireContext(), "Titik jemput tidak valid", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val results = FloatArray(1)
+        Location.distanceBetween(
+            userLatLng.latitude,
+            userLatLng.longitude,
+            depLat,
+            depLng,
+            results
+        )
+
+        val distanceMeter = results[0]
+
+        if (distanceMeter <= 10) {
+            binding.buttonOrder.isEnabled = true
+        } else {
+            binding.checkBoxPosition.isChecked = false
+            binding.buttonOrder.isEnabled = false
+            Toast.makeText(
+                requireContext(),
+                "Anda terlalu jauh dari titik jemput (${distanceMeter.toInt()} m)",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
 
     // ===================================
     // Navigasi ke halaman berikutnya

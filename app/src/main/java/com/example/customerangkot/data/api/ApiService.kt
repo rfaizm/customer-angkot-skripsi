@@ -1,6 +1,6 @@
 package com.example.customerangkot.data.api
 
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
+import com.example.customerangkot.data.api.dto.AngkotFilterResponse
 import com.example.customerangkot.data.api.dto.FindClosestResponse
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
@@ -153,9 +153,13 @@ interface ApiService {
         @Field("angkot_id") angkotId : Int,
     ) : Response<GetDriverResponse>
 
-
-    @GET("orders/check-active")
-    suspend fun getCheckActiveOrder(
-        @Header("Authorization") token: String
-    ): Response<CheckOrderActiveResponse>
+    @FormUrlEncoded
+    @POST("trayek/angkot-available")
+    suspend fun getAngkotFilterById(
+        @Header("Authorization") token: String,
+        @Field("trayek_id") trayekId : Int,
+        @Field("lat") lat : Double,
+        @Field("long") long : Double,
+        @Field("polyline") polyline : String
+    ) : Response<AngkotFilterResponse>
 }

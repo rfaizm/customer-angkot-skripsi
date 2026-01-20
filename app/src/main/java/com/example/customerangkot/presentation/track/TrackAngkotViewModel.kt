@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
+import com.example.customerangkot.data.api.dto.DataAngkotFilter
 import com.example.customerangkot.data.api.dto.DataTrayekJSON
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
@@ -18,6 +18,7 @@ import com.example.customerangkot.data.api.dto.TopUpResponse
 import com.example.customerangkot.di.ResultState
 import com.example.customerangkot.domain.entity.LatLng
 import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
+import com.example.customerangkot.domain.usecase.location.GetCurrentUserLocationUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -26,6 +27,7 @@ import com.example.customerangkot.domain.usecase.order.CancelOrderUseCase
 import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetAngkotFilterByTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
 import com.example.customerangkot.domain.usecase.user.GetSaldoUseCase
@@ -43,7 +45,11 @@ class TrackAngkotViewModel(
     private val getSaldoUseCase: GetSaldoUseCase,
     private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
     private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase,
+    private val getCurrentUserLocationUseCase: GetCurrentUserLocationUseCase,
+    private val getAngkotFilterByTrayekUseCase: GetAngkotFilterByTrayekUseCase
 ) : ViewModel() {
+    private val _currentUserLocationState = MutableLiveData<ResultState<LatLng>>()
+    val currentUserLocationState: LiveData<ResultState<LatLng>> get() = _currentUserLocationState
 
     private val _locationState = MutableLiveData<ResultState<LatLng>>()
     val locationState: LiveData<ResultState<LatLng>> get() = _locationState
@@ -54,8 +60,10 @@ class TrackAngkotViewModel(
     private val _routesState = MutableLiveData<ResultState<RouteResponse>>()
     val routesState: LiveData<ResultState<RouteResponse>> get() = _routesState
 
-    private val _angkotState = MutableLiveData<ResultState<List<DataTrayekJSON>>>()
-    val angkotState: LiveData<ResultState<List<DataTrayekJSON>>> get() = _angkotState
+    private val _angkotState =
+        MutableLiveData<ResultState<List<DataAngkotFilter>>>()
+
+    val angkotState: LiveData<ResultState<List<DataAngkotFilter>>> = _angkotState
 
     private val _angkotPositions = MutableLiveData<Map<Int, LatLng>>()
     val angkotPositions: LiveData<Map<Int, LatLng>> get() = _angkotPositions
@@ -81,8 +89,6 @@ class TrackAngkotViewModel(
     private val _driverIdState = MutableLiveData<ResultState<GetDriverResponse>>()
 
     val driverIdState: LiveData<ResultState<GetDriverResponse>> get() = _driverIdState
-    private val _activeOrderState = MutableLiveData<ResultState<CheckOrderActiveResponse>>()
-    val activeOrderState: LiveData<ResultState<CheckOrderActiveResponse>> get() = _activeOrderState
     var lastLocationType: String? = null
 
     fun checkPusherConnection() {
@@ -106,6 +112,22 @@ class TrackAngkotViewModel(
             }
         }
     }
+
+    fun fetchCurrentUserLocation() {
+        _currentUserLocationState.value = ResultState.Loading
+
+        viewModelScope.launch {
+            val result = getCurrentUserLocationUseCase()
+            _currentUserLocationState.value = when {
+                result.isSuccess -> ResultState.Success(result.getOrThrow())
+                else -> ResultState.Error(
+                    result.exceptionOrNull()?.message
+                        ?: "Gagal mendapatkan lokasi terbaru"
+                )
+            }
+        }
+    }
+
 
     fun getPlaceName(lat: Double, lng: Double, locationType: String) {
         lastLocationType = locationType
@@ -146,16 +168,34 @@ class TrackAngkotViewModel(
         }
     }
 
-    fun getAngkotByTrayekId(lat: Double, lng: Double, trayekId: Int) {
+    fun getFilteredAngkot(
+        trayekId: Int,
+        lat: Double,
+        lng: Double,
+        polyline: String
+    ) {
         _angkotState.value = ResultState.Loading
+
         viewModelScope.launch {
-            val result = getAngkotByTrayekIdUseCase(lat, lng, trayekId)
-            _angkotState.value = when {
-                result.isSuccess -> ResultState.Success(result.getOrThrow())
-                else -> ResultState.Error(result.exceptionOrNull()?.message ?: "Gagal mengambil data angkot")
+            try {
+                val result = getAngkotFilterByTrayekUseCase(
+                    trayekId = trayekId,
+                    lat = lat,
+                    lng = lng,
+                    polyline = polyline
+                )
+                Log.d("TrackAngkotViewModel", "Angkot berhasil diambil: ${result.getOrThrow().size} angkot")
+                _angkotState.value = ResultState.Success(result.getOrThrow())
+
+            } catch (e: Exception) {
+                _angkotState.value = ResultState.Error(
+                    e.message ?: "Terjadi kesalahan"
+                )
             }
         }
     }
+
+
 
     fun getDriverWithAngkotId(angkotId: Int) {
         _driverIdState.value = ResultState.Loading
@@ -169,6 +209,11 @@ class TrackAngkotViewModel(
     }
 
     fun updateAngkotPosition(angkotId: Int, lat: Double, lng: Double) {
+        val vmTime = System.currentTimeMillis()
+        Log.d(
+            "REALTIME_VM",
+            "VM_UPDATE | angkotId=$angkotId | lat=$lat | lng=$lng | vmTime=$vmTime"
+        )
         val currentPositions = _angkotPositions.value?.toMutableMap() ?: mutableMapOf()
         currentPositions[angkotId] = LatLng(lat, lng)
         _angkotPositions.postValue(currentPositions)

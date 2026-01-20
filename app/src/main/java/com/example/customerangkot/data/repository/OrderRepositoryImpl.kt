@@ -2,7 +2,6 @@ package com.example.customerangkot.data.repository
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
@@ -66,13 +65,13 @@ class OrderRepositoryImpl(
         }
     }
 
-    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
-        try {
-            Log.d(TAG, "Fetching Check Order Active")
-            return orderDataSource.getCheckOrderActive(token)
-        } catch (e : Exception) {
-            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
-            throw e
-        }
-    }
+//    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
+//        try {
+//            Log.d(TAG, "Fetching Check Order Active")
+//            return orderDataSource.getCheckOrderActive(token)
+//        } catch (e : Exception) {
+//            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
+//            throw e
+//        }
+//    }
 }

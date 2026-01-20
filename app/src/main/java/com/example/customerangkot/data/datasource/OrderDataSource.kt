@@ -1,6 +1,5 @@
 package com.example.customerangkot.data.datasource
 
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
@@ -27,6 +26,6 @@ interface OrderDataSource {
         endLong: Double
     ): GetETAResponse
 
-    suspend fun getCheckOrderActive(token: String) : CheckOrderActiveResponse
+    // suspend fun getCheckOrderActive(token: String) : CheckOrderActiveResponse
 
 }

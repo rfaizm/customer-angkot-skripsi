@@ -7,6 +7,7 @@ import com.example.customerangkot.domain.usecase.auth.LoginUseCase
 import com.example.customerangkot.domain.usecase.auth.LogoutUseCase
 import com.example.customerangkot.domain.usecase.auth.RegisterUseCase
 import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
+import com.example.customerangkot.domain.usecase.location.GetCurrentUserLocationUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -15,6 +16,7 @@ import com.example.customerangkot.domain.usecase.order.CancelOrderUseCase
 import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetAngkotFilterByTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
 import com.example.customerangkot.domain.usecase.user.GetHistoryUseCase
@@ -50,8 +52,9 @@ class ViewModelFactory private constructor(
     private val getETAUseCase: GetETAUseCase, // [Baru]
     private val checkPusherConnectionUseCase: CheckPusherConnectionUseCase,
     private val getDriverIdWithAngkotIdUseCase: GetDriverIdWithAngkotIdUseCase,
-//    private val getCheckActiveOrder: GetCheckActiveOrder
-) : ViewModelProvider.NewInstanceFactory() {
+    private val getCurrentUserLocationUseCase: GetCurrentUserLocationUseCase,
+    private val getAngkotFilterByTrayekUseCase : GetAngkotFilterByTrayekUseCase
+    ) : ViewModelProvider.NewInstanceFactory() {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -59,21 +62,31 @@ class ViewModelFactory private constructor(
             modelClass.isAssignableFrom(RegisterViewModel::class.java) -> {
                 RegisterViewModel(registerUseCase) as T
             }
+
             modelClass.isAssignableFrom(LoginViewModel::class.java) -> {
                 LoginViewModel(loginUseCase) as T
             }
+
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> {
                 ProfileViewModel(logoutUseCase, getHistoryUseCase, getProfileUseCase) as T
             }
+
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
                 HomeViewModel(getUserLocationUseCase, getClosestTrayekUseCase, getSaldoUseCase) as T
             }
+
             modelClass.isAssignableFrom(AngkotViewModel::class.java) -> {
-                AngkotViewModel(getUserLocationUseCase, getClosestTrayekUseCase, getAngkotByTrayekIdUseCase) as T
+                AngkotViewModel(
+                    getUserLocationUseCase,
+                    getClosestTrayekUseCase,
+                    getAngkotByTrayekIdUseCase
+                ) as T
             }
+
             modelClass.isAssignableFrom(DetailInformationTrayekViewModel::class.java) -> {
                 DetailInformationTrayekViewModel(getAngkotByTrayekIdUseCase) as T
             }
+
             modelClass.isAssignableFrom(TrackAngkotViewModel::class.java) -> {
                 TrackAngkotViewModel(
                     getUserLocationUseCase,
@@ -87,11 +100,15 @@ class ViewModelFactory private constructor(
                     getSaldoUseCase,
                     checkPusherConnectionUseCase,
                     getDriverIdWithAngkotIdUseCase,
+                    getCurrentUserLocationUseCase,
+                    getAngkotFilterByTrayekUseCase
                 ) as T
             }
+
             modelClass.isAssignableFrom(TopUpViewModel::class.java) -> {
                 TopUpViewModel(topUpUseCase) as T
             }
+
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
@@ -122,8 +139,9 @@ class ViewModelFactory private constructor(
                     Injection.provideGetETAUseCase(context), // [Baru]
                     Injection.provideCheckPusherConnectionUseCase(),
                     Injection.provideGetDriverIdWithAngkotIdUseCase(context),
-//                    Injection.proviceGetCheckActiveOrderUseCase(context)
-                )
+                    Injection.provideGetCurrentUserLocationUseCase(context),
+                    Injection.provideGetAngkotFilterByTrayekUseCase(context),
+                    )
             }.also { instance = it }
     }
 }

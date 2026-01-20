@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "session")
+val Context.dataStore : DataStore<Preferences> by preferencesDataStore(name = "session")
 
 class UserPreference(private val dataStore: DataStore<Preferences>) {
 

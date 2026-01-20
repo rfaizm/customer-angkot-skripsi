@@ -2,6 +2,7 @@ package com.example.customerangkot.data.datasource
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Looper
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
 import com.example.customerangkot.data.api.dto.PlaceNameResponse
@@ -9,7 +10,12 @@ import com.example.customerangkot.data.api.dto.PlaceToCoordinateResponse
 import com.example.customerangkot.data.api.dto.RouteResponse
 import com.example.customerangkot.domain.entity.LatLng
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 
 class LocationDataSourceImpl(
@@ -37,6 +43,50 @@ class LocationDataSourceImpl(
             return null
         }
     }
+
+    @SuppressLint("MissingPermission")
+    override suspend fun getCurrentLocation(): LatLng? {
+        return try {
+            Log.d(TAG, "Fetching CURRENT location (fresh)")
+
+            val locationRequest = LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                1000L
+            )
+                .setMaxUpdates(1)
+                .build()
+
+            suspendCancellableCoroutine { cont ->
+                val callback = object : LocationCallback() {
+                    override fun onLocationResult(result: LocationResult) {
+                        fusedLocationClient.removeLocationUpdates(this)
+                        val location = result.lastLocation
+                        cont.resume(
+                            location?.let {
+                                LatLng(it.latitude, it.longitude)
+                            },
+                            null
+                        )
+                    }
+                }
+
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    callback,
+                    Looper.getMainLooper()
+                )
+
+                cont.invokeOnCancellation {
+                    fusedLocationClient.removeLocationUpdates(callback)
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching current location", e)
+            null
+        }
+    }
+
 
     override suspend fun getNamePlace(token: String, lat: Double, lng: Double): PlaceNameResponse {
         try {

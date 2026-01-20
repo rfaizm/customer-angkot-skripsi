@@ -2,6 +2,7 @@ package com.example.customerangkot.presentation.track.chooseangkot
 
 import android.icu.text.NumberFormat
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import com.example.customerangkot.presentation.maps.MapsFragment
 import com.example.customerangkot.presentation.track.TrackAngkotViewModel
 import com.example.customerangkot.utils.LocationPermissionListener
 import com.example.customerangkot.utils.OnMarkerClickListener
+import com.example.customerangkot.utils.Utils
 import com.example.customerangkot.utils.Utils.haversineDistance
 import com.google.android.gms.maps.model.LatLng
 import com.pusher.client.Pusher
@@ -30,6 +32,7 @@ import com.pusher.client.connection.ConnectionEventListener
 import com.pusher.client.connection.ConnectionState
 import com.pusher.client.connection.ConnectionStateChange
 import org.json.JSONObject
+import java.net.URLEncoder
 import java.util.Locale
 
 
@@ -54,8 +57,11 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
     private val trackAngkotViewModel by viewModels<TrackAngkotViewModel> {
         ViewModelFactory.getInstance(requireContext())
     }
-
+    private val REALTIME_TAG = "REALTIME_PASSENGER"
+    private var lastRealtimeUpdateTime: Long? = null
     private val TAG = "ChooseAngkotFragment" // [Baru] Tag untuk logging
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -88,7 +94,6 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
         setupRecyclerView()
 
         if (trayekId != 0 && startLat != 0.0 && startLong != 0.0 && price != 0.0 && polyline.isNotEmpty()) {
-            trackAngkotViewModel.getAngkotByTrayekId(startLat, startLong, trayekId)
             val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
             binding.layoutPrice.setPrice(formatter.format(price).replace("Rp", "Rp. ").replace(",00", ""))
 
@@ -142,11 +147,25 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             val channel = pusher.subscribe(channelName)
             channel.bind("App\\Events\\AngkotLocationUpdated") { event ->
                 try {
+                    val receivedTime = System.currentTimeMillis()
+                    lastRealtimeUpdateTime?.let { last ->
+                        val interval = receivedTime - last
+                        Log.d(
+                            REALTIME_TAG,
+                            "UPDATE_INTERVAL | angkotId=$angkotId | intervalMs=$interval | intervalSec=${interval / 1000.0}"
+                        )
+                    }
+                    lastRealtimeUpdateTime = receivedTime
                     Log.d(TAG, "Received event on $channelName: ${event.data}")
                     val data = JSONObject(event.data)
                     val id = data.getInt("id")
                     val lat = data.getDouble("lat")
                     val lng = data.getDouble("long")
+
+                    Log.d(
+                        REALTIME_TAG,
+                        "EVENT_RECEIVED | angkotId=$id | lat=$lat | lng=$lng | receivedTime=$receivedTime"
+                    )
                     Log.d(TAG, "Received position update: id=$id, lat=$lat, lng=$lng")
 
                     trackAngkotViewModel.updateAngkotPosition(id, lat, lng)
@@ -202,6 +221,15 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                     val latLng = state.data
                     userLat = latLng.latitude
                     userLong = latLng.longitude
+
+                    val polylineString = Base64.encodeToString(polyline.toByteArray(), Base64.NO_WRAP)
+
+                    trackAngkotViewModel.getFilteredAngkot(
+                        trayekId = trayekId,
+                        lat = userLat ?: startLat,
+                        lng = userLong ?: startLong,
+                        polyline = polylineString
+                    )
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
                     mapsFragment?.animateCameraToLocation(latLng.latitude, latLng.longitude)
                     showLoading(false)
@@ -225,19 +253,14 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                     val angkotList = state.data
                     val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
 
-                    val trayekInfo = angkotList.firstOrNull()
+                    val trayekInfo = angkotList.firstOrNull()?.trayek
 
                     if (trayekInfo != null) {
 
                         // [BARU] Set nama trayek
-                        binding.textTrayekName.text =
-                            trayekInfo.trayek?.name ?: "-"
-
-                        // [BARU] Load image trayek
+                        binding.textTrayekName.text = trayekInfo.name ?: "-"
                         Glide.with(requireContext())
-                            .load(trayekInfo.trayek?.imageUrl)
-                            .placeholder(R.drawable.placeholder_image)
-                            .error(R.drawable.placeholder_image)
+                            .load(trayekInfo.imageUrl)
                             .into(binding.imageTrayek)
                     } else {
                         binding.imageTrayek.visibility = View.GONE
@@ -325,6 +348,19 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
             positions.forEach { (angkotId, latLng) ->
                 mapsFragment?.updateAngkotMarker(angkotId, latLng.latitude, latLng.longitude)
+                val markerUpdateTime = System.currentTimeMillis()
+
+                Log.d(
+                    REALTIME_TAG,
+                    "MARKER_UPDATED | angkotId=$angkotId | lat=${latLng.latitude} | lng=${latLng.longitude} | markerTime=$markerUpdateTime"
+                )
+                val delay = markerUpdateTime - (lastRealtimeUpdateTime ?: markerUpdateTime)
+
+                Log.d(
+                    REALTIME_TAG,
+                    "END_TO_END_DELAY | angkotId=$angkotId | delayMs=$delay | delaySec=${delay / 1000.0}"
+                )
+
 
                 val uLat = userLat
                 val uLng = userLong

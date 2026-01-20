@@ -49,10 +49,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginBottom="38dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
         android:src="@drawable/ic_circle"
         app:layout_constraintBottom_toTopOf="@+id/guidelineHorizontalMiddleForRoute"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/card_view_search_start"
         app:tint="@color/black" />
 
     <View

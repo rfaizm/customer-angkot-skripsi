@@ -2,6 +2,7 @@ package com.example.customerangkot.data.repository
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
+import com.example.customerangkot.data.api.dto.AngkotFilterResponse
 import com.example.customerangkot.data.api.dto.FindClosestResponse
 import com.example.customerangkot.data.api.dto.GetDriverResponse
 import com.example.customerangkot.data.datasource.TrayekDataSource
@@ -49,4 +50,21 @@ class TrayekRepositoryImpl(
         }
 
     }
+
+    override suspend fun getAngkotFilterByTrayek(
+        token: String,
+        trayekId: Int,
+        lat: Double,
+        lng: Double,
+        polyline: String
+    ): AngkotFilterResponse {
+        return trayekDataSource.getAngkotFilterByTrayek(
+            token,
+            trayekId,
+            lat,
+            lng,
+            polyline
+        )
+    }
+
 }

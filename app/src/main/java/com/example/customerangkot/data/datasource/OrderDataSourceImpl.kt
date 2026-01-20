@@ -2,7 +2,6 @@ package com.example.customerangkot.data.datasource
 
 import android.util.Log
 import com.example.customerangkot.data.api.ApiService
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.api.dto.GetETAResponse
 import com.example.customerangkot.data.api.dto.OrderCancelResponse
 import com.example.customerangkot.data.api.dto.OrderCreatedResponse
@@ -108,21 +107,21 @@ class OrderDataSourceImpl(
         }
     }
 
-    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
-        try {
-            val response = apiService.getCheckActiveOrder("Bearer $token")
-
-            if (response.isSuccessful) {
-                Log.d(TAG, "getCheckOrderActive response: ${response.body()}")
-                return response.body() ?: throw Exception("Respons kosong dari server")
-            } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Log.d(TAG, "Error response body: $errorBody")
-                throw HttpException(response)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
-            throw e
-        }
-    }
+//    override suspend fun getCheckOrderActive(token: String): CheckOrderActiveResponse {
+//        try {
+//            val response = apiService.getCheckActiveOrder("Bearer $token")
+//
+//            if (response.isSuccessful) {
+//                Log.d(TAG, "getCheckOrderActive response: ${response.body()}")
+//                return response.body() ?: throw Exception("Respons kosong dari server")
+//            } else {
+//                val errorBody = response.errorBody()?.string() ?: ""
+//                Log.d(TAG, "Error response body: $errorBody")
+//                throw HttpException(response)
+//            }
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Error fetching ETA: ${e.message}", e)
+//            throw e
+//        }
+//    }
 }

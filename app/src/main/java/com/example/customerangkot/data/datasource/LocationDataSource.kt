@@ -7,6 +7,7 @@ import com.example.customerangkot.domain.entity.LatLng
 
 interface LocationDataSource {
     suspend fun getLastLocation(): LatLng?
+    suspend fun getCurrentLocation(): LatLng?
     suspend fun getNamePlace(token: String, lat: Double, lng: Double): PlaceNameResponse
     suspend fun searchPlaceToCoordinates(token: String, place: String, userLat: Double, userLng: Double): PlaceToCoordinateResponse
     suspend fun getRoutes(token: String, startLat: Double, startLong: Double, endLat: Double, endLong: Double, routeOption: String): RouteResponse

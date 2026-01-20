@@ -24,6 +24,7 @@ import com.example.customerangkot.domain.usecase.auth.LoginUseCase
 import com.example.customerangkot.domain.usecase.auth.LogoutUseCase
 import com.example.customerangkot.domain.usecase.auth.RegisterUseCase
 import com.example.customerangkot.domain.usecase.location.CheckPusherConnectionUseCase
+import com.example.customerangkot.domain.usecase.location.GetCurrentUserLocationUseCase
 import com.example.customerangkot.domain.usecase.location.GetPlaceNameUseCase
 import com.example.customerangkot.domain.usecase.location.GetRoutesUseCase
 import com.example.customerangkot.domain.usecase.location.GetUserLocationUseCase
@@ -32,6 +33,7 @@ import com.example.customerangkot.domain.usecase.order.CancelOrderUseCase
 import com.example.customerangkot.domain.usecase.order.CreateOrderUseCase
 import com.example.customerangkot.domain.usecase.order.GetETAUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetAngkotByTrayekIdUseCase
+import com.example.customerangkot.domain.usecase.trayek.GetAngkotFilterByTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetClosestTrayekUseCase
 import com.example.customerangkot.domain.usecase.trayek.GetDriverIdWithAngkotIdUseCase
 import com.example.customerangkot.domain.usecase.user.GetHistoryUseCase
@@ -148,7 +150,14 @@ object Injection {
     fun provideGetDriverIdWithAngkotIdUseCase(context: Context): GetDriverIdWithAngkotIdUseCase {
         return GetDriverIdWithAngkotIdUseCase(provideTrayekRepository(context), UserPreference.getInstance(context.dataStore))
     }
-//    fun proviceGetCheckActiveOrderUseCase(context: Context): GetCheckActiveOrder {
-//        return GetCheckActiveOrder(provideOrderRepository(context), UserPreference.getInstance(context.dataStore))
-//    }
+
+    fun provideGetCurrentUserLocationUseCase(context: Context): GetCurrentUserLocationUseCase {
+        return GetCurrentUserLocationUseCase(provideLocationRepository(context))
+    }
+
+    fun provideGetAngkotFilterByTrayekUseCase(context: Context): GetAngkotFilterByTrayekUseCase {
+        val repository = provideTrayekRepository(context)
+        val userPreference = UserPreference.getInstance(context.dataStore)
+        return GetAngkotFilterByTrayekUseCase(repository, userPreference)
+    }
 }

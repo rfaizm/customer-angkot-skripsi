@@ -340,32 +340,32 @@ class WaitingAngkotFragment : Fragment(), LocationPermissionListener {
         }
     }
 
-    private fun observeCheckOrderActive() {
-        trackAngkotViewModel.activeOrderState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is ResultState.Loading -> {
-                    showLoading(true)
-                    binding.layoutCancelAngkotWait.hideCancelButton()
-                }
-                is ResultState.Success -> {
-                    val orderActive = state.data
-
-                    orderId = orderActive.data?.orderId
-
-                    orderId?.let {
-                        subscribeToOrderStatus(it)
-                    }
-
-                    orderActive.data?.driver?.name?.let { binding.layoutCancelAngkotWait.setFullName(it) }
-                    orderActive.data?.angkot?.platNomor?.let { binding.layoutCancelAngkotWait.setPlateNumber(it) }
-
-                }
-                is ResultState.Error -> {
-
-                }
-            }
-        }
-    }
+//    private fun observeCheckOrderActive() {
+//        trackAngkotViewModel.activeOrderState.observe(viewLifecycleOwner) { state ->
+//            when (state) {
+//                is ResultState.Loading -> {
+//                    showLoading(true)
+//                    binding.layoutCancelAngkotWait.hideCancelButton()
+//                }
+//                is ResultState.Success -> {
+//                    val orderActive = state.data
+//
+//                    orderId = orderActive.data?.orderId
+//
+//                    orderId?.let {
+//                        subscribeToOrderStatus(it)
+//                    }
+//
+//                    orderActive.data?.driver?.name?.let { binding.layoutCancelAngkotWait.setFullName(it) }
+//                    orderActive.data?.angkot?.platNomor?.let { binding.layoutCancelAngkotWait.setPlateNumber(it) }
+//
+//                }
+//                is ResultState.Error -> {
+//
+//                }
+//            }
+//        }
+//    }
     private fun loadMaps() {
         val existingFragment = childFragmentManager.findFragmentById(R.id.map_waiting_angkot)
         if (existingFragment == null) {

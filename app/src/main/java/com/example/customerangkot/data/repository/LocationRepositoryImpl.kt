@@ -31,6 +31,16 @@ class LocationRepositoryImpl(
         }
     }
 
+    override suspend fun getCurrentLocation(): LatLng? {
+        return try {
+            Log.d(TAG, "Fetching CURRENT location from DataSource")
+            locationDataSource.getCurrentLocation()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching current location", e)
+            null
+        }
+    }
+
     override suspend fun getNamePlace(token: String, lat: Double, lng: Double): PlaceNameResponse {
         try {
             Log.d(TAG, "Fetching place name from DataSource with lat=$lat, lng=$lng")

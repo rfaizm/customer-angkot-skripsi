@@ -1,7 +1,6 @@
 package com.example.customerangkot.domain.usecase.order
 
 import android.util.Log
-import com.example.customerangkot.data.api.dto.CheckOrderActiveResponse
 import com.example.customerangkot.data.preference.UserPreference
 import com.example.customerangkot.domain.repository.OrderRepository
 

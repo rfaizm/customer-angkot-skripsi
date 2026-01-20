@@ -1,6 +1,7 @@
 package com.example.customerangkot.utils
 
 import android.content.Context
+import android.util.Base64
 import androidx.core.content.ContentProviderCompat.requireContext
 import com.example.customerangkot.R
 import com.example.customerangkot.domain.entity.TrayekItem
@@ -30,6 +31,12 @@ object Utils {
         }.show()
     }
 
+    private fun encodePolyline(polyline: String): String {
+        return Base64.encodeToString(
+            polyline.toByteArray(Charsets.UTF_8),
+            Base64.NO_WRAP
+        )
+    }
 
     fun extractAmountFromRadioButton(radioText: String): String {
         // Contoh: "Rp. 200.000" -> "200000"
