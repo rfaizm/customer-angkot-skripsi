@@ -199,6 +199,11 @@ class MapsFragment : Fragment() {
         }
     }
 
+    fun removeAngkotMarker(angkotId: Int) {
+        angkotMarkers[angkotId]?.remove()
+        angkotMarkers.remove(angkotId)
+    }
+
     fun updateAngkotMarker(angkotId: Int, lat: Double, lng: Double) {
         val savedPlatNomor = angkotPlatNomor[angkotId]
         updateAngkotMarker(angkotId, lat, lng, savedPlatNomor)

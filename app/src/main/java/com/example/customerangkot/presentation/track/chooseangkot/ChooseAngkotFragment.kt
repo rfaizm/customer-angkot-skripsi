@@ -25,6 +25,7 @@ import com.example.customerangkot.utils.OnMarkerClickListener
 import com.example.customerangkot.utils.Utils
 import com.example.customerangkot.utils.Utils.haversineDistance
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.PolyUtil
 import com.pusher.client.Pusher
 import com.pusher.client.PusherOptions
 import com.pusher.client.channel.Channel
@@ -53,6 +54,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
     private var userLong: Double? = null
     private lateinit var chooseAngkotAdapter: ChooseAngkotAdapter
     private val subscribedChannels = mutableSetOf<Channel>()
+    private var decodedRoutePoints: List<com.google.android.gms.maps.model.LatLng> = emptyList()
 
     private val trackAngkotViewModel by viewModels<TrackAngkotViewModel> {
         ViewModelFactory.getInstance(requireContext())
@@ -85,6 +87,8 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             polyline = it.getString("polyline", "")
             Log.d(TAG, "Data diterima: trayekId=$trayekId, startLat=$startLat, startLong=$startLong, destinationLat=$destinationLat, destinationLong=$destinationLong, price=$price, polyline=$polyline")
         }
+
+        decodedRoutePoints = PolyUtil.decode(polyline)
 
         loadMaps()
         setupFAB()
@@ -179,7 +183,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
     }
 
     private fun setupRecyclerView() {
-        chooseAngkotAdapter = ChooseAngkotAdapter(emptyList()) { angkot ->
+        chooseAngkotAdapter = ChooseAngkotAdapter(mutableListOf()) { angkot ->
 
             selectedAngkotId = angkot.angkotId
             binding.btnConfirmationAngkot.isEnabled = true
@@ -279,7 +283,7 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
                         binding.rvDetailAngkot.visibility = View.VISIBLE
 
                         // [BARU] Update list RecyclerView
-                        chooseAngkotAdapter = ChooseAngkotAdapter(angkotList) { angkot ->
+                        chooseAngkotAdapter = ChooseAngkotAdapter(angkotList.toMutableList()) { angkot ->
                             selectedAngkotId = angkot.angkotId
                             binding.btnConfirmationAngkot.isEnabled = true
 
@@ -345,44 +349,55 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
 
     private fun observeAngkotPositions() {
         trackAngkotViewModel.angkotPositions.observe(viewLifecycleOwner) { positions ->
-            val mapsFragment = childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
+            val mapsFragment =
+                childFragmentManager.findFragmentById(R.id.map_real_time_angkot) as? MapsFragment
+
+            val uLat = userLat ?: return@observe
+            val uLng = userLong ?: return@observe
+
+            val userDomainLatLng = com.example.customerangkot.domain.entity.LatLng(
+                latitude = uLat,
+                longitude = uLng
+            )
+
             positions.forEach { (angkotId, latLng) ->
-                mapsFragment?.updateAngkotMarker(angkotId, latLng.latitude, latLng.longitude)
-                val markerUpdateTime = System.currentTimeMillis()
 
-                Log.d(
-                    REALTIME_TAG,
-                    "MARKER_UPDATED | angkotId=$angkotId | lat=${latLng.latitude} | lng=${latLng.longitude} | markerTime=$markerUpdateTime"
-                )
-                val delay = markerUpdateTime - (lastRealtimeUpdateTime ?: markerUpdateTime)
-
-                Log.d(
-                    REALTIME_TAG,
-                    "END_TO_END_DELAY | angkotId=$angkotId | delayMs=$delay | delaySec=${delay / 1000.0}"
+                // CEK SUDAH LEWAT ATAU BELUM
+                val hasPassed = hasAngkotPassedUser(
+                    angkotPos = latLng, // Google Maps LatLng
+                    userPos = userDomainLatLng
                 )
 
+                if (hasPassed) {
+                    mapsFragment?.removeAngkotMarker(angkotId)
+                    chooseAngkotAdapter.removeAngkotById(angkotId)
 
-                val uLat = userLat
-                val uLng = userLong
-                if (uLat != null && uLng != null) {
-                    val distanceKm = haversineDistance(
-                        uLat,
-                        uLng,
-                        latLng.latitude,
-                        latLng.longitude
-                    )
-
-                    // [BARU] Update RecyclerView item
-                    chooseAngkotAdapter.updateDistance(
-                        angkotId,
-                        distanceKm
-                    )
+                    if (selectedAngkotId == angkotId) {
+                        selectedAngkotId = null
+                        binding.btnConfirmationAngkot.isEnabled = false
+                    }
+                    return@forEach
                 }
 
-                Log.d(TAG, "Updating marker for Angkot $angkotId: Lat=${latLng.latitude}, Lng=${latLng.longitude}")
+                //  UPDATE MARKER
+                mapsFragment?.updateAngkotMarker(
+                    angkotId,
+                    latLng.latitude,
+                    latLng.longitude
+                )
+
+                //  UPDATE JARAK (TIDAK DIHILANGKAN)
+                val distanceKm = haversineDistance(
+                    uLat,
+                    uLng,
+                    latLng.latitude,
+                    latLng.longitude
+                )
+                chooseAngkotAdapter.updateDistance(angkotId, distanceKm)
             }
         }
     }
+
 
     private fun setupFAB() {
         binding.btnConfirmationAngkot.setOnClickListener {
@@ -404,6 +419,46 @@ class ChooseAngkotFragment : Fragment(), LocationPermissionListener, OnMarkerCli
             }
         }
     }
+
+    private fun hasAngkotPassedUser(
+        angkotPos: com.example.customerangkot.domain.entity.LatLng,
+        userPos: com.example.customerangkot.domain.entity.LatLng
+    ): Boolean {
+
+        if (decodedRoutePoints.isEmpty()) return false
+
+        // konversi ke Google LatLng (KHUSUS di sini)
+        val angkotLatLng = com.google.android.gms.maps.model.LatLng(
+            angkotPos.latitude,
+            angkotPos.longitude
+        )
+
+        val userLatLng = com.google.android.gms.maps.model.LatLng(
+            userPos.latitude,
+            userPos.longitude
+        )
+
+        val angkotIndex = PolyUtil.locationIndexOnPath(
+            angkotLatLng,
+            decodedRoutePoints,
+            false,
+            30.0 // toleransi meter
+        )
+
+        val userIndex = PolyUtil.locationIndexOnPath(
+            userLatLng,
+            decodedRoutePoints,
+            false,
+            30.0
+        )
+
+        // jika salah satu tidak nempel ke polyline → aman
+        if (angkotIndex == -1 || userIndex == -1) return false
+
+        // LOGIKA INTI
+        return angkotIndex > userIndex
+    }
+
 
     private fun loadMaps() {
         val layoutPositionMaps = binding.root.findViewById<View>(R.id.map_real_time_angkot)
